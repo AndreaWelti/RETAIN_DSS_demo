@@ -3,14 +3,18 @@ import sys
 import json
 from pathlib import Path
 
-# Force Python to load retain_dss from the source tree, not from a stale
-# cached installation in the venv (Streamlit Cloud preserves the venv across
-# deploys and does not uninstall packages removed from requirements.txt).
-_repo_root = Path(__file__).resolve().parent.parent.parent
+# Compute absolute paths from app.py's known location so that data and model
+# files are found correctly regardless of how/where retain_dss is installed.
+_APP_FILE   = Path(__file__).resolve()
+_REPO_ROOT  = _APP_FILE.parent.parent.parent          # .../retain_dss_demo/
+_DATA_DIR   = _APP_FILE.parent.parent / "data" / "synthetic"   # retain_dss/data/synthetic/
+_MODELS_DIR = _REPO_ROOT / "models" / "saved"         # models/saved/
+
+# Also try to load retain_dss from source (in case venv has a stale install).
 for _key in [k for k in sys.modules if k == "retain_dss" or k.startswith("retain_dss.")]:
     del sys.modules[_key]
-if str(_repo_root) not in sys.path:
-    sys.path.insert(0, str(_repo_root))
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -218,13 +222,14 @@ page = st.sidebar.radio("Navigation", PAGES)
 def get_models():
     models = {}
     for route in ["route1", "route2", "route3"]:
+        route_suffix = "mechanical" if route == "route1" else "solvent" if route == "route2" else "extraction"
         try:
-            models[route] = load_models(route)
+            models[route] = load_models(route, models_dir=_MODELS_DIR)
         except FileNotFoundError:
-            df = load_route(f"route{route[-1]}_{'mechanical' if route=='route1' else 'solvent' if route=='route2' else 'extraction'}")
+            df = load_route(f"route{route[-1]}_{route_suffix}", data_dir=_DATA_DIR)
             m = train_route(df, route)
             from retain_dss.models.trainer import save_models
-            save_models(m, route)
+            save_models(m, route, models_dir=_MODELS_DIR)
             models[route] = m
     return models
 
