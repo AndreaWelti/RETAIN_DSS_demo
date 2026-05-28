@@ -3,8 +3,12 @@ import sys
 import json
 from pathlib import Path
 
-# Make retain_dss importable from source tree (required on Streamlit Cloud)
+# Force Python to load retain_dss from the source tree, not from a stale
+# cached installation in the venv (Streamlit Cloud preserves the venv across
+# deploys and does not uninstall packages removed from requirements.txt).
 _repo_root = Path(__file__).resolve().parent.parent.parent
+for _key in [k for k in sys.modules if k == "retain_dss" or k.startswith("retain_dss.")]:
+    del sys.modules[_key]
 if str(_repo_root) not in sys.path:
     sys.path.insert(0, str(_repo_root))
 import numpy as np
