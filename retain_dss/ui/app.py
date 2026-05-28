@@ -351,8 +351,8 @@ elif page == PAGES[2]:
                     st.markdown(ROUTE_DESCRIPTIONS[rkey])
         st.divider()
 
-        pop_size = st.slider("GA population size", 20, 200, 100, 10)
-        n_gen    = st.slider("Number of GA generations", 20, 500, 200, 10)
+        pop_size = st.slider("GA population size", 20, 200, 50, 10)
+        n_gen    = st.slider("Number of GA generations", 20, 500, 100, 10)
 
         if st.button("🚀 Optimise all 3 routes", type="primary"):
             models   = get_models()
