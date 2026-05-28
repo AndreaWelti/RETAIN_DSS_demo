@@ -1,0 +1,100 @@
+<h2>Design — Sezione 4: UI Streamlit + Notebook Jupyter</h2>
+<p class="subtitle">Due interfacce sullo stesso package — operatori e ricercatori</p>
+
+<!-- STREAMLIT APP -->
+<div style="background:#1e293b;border-radius:8px;border-left:4px solid #4ade80;padding:1rem;margin-bottom:1rem;">
+  <div style="color:#86efac;font-weight:600;margin-bottom:0.75rem;">Streamlit App — per operatori di processo</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+
+    <div>
+      <div style="color:#94a3b8;font-size:0.8em;margin-bottom:6px;">Struttura pagine (sidebar navigation)</div>
+      <div style="font-size:0.82em;color:#cbd5e1;line-height:2;">
+        <div style="border-left:3px solid #6366f1;padding-left:8px;margin-bottom:4px;"><strong>1. Input materiale</strong><br><span style="color:#64748b;">Slider per le 8 proprietà del telo in ingresso</span></div>
+        <div style="border-left:3px solid #f59e0b;padding-left:8px;margin-bottom:4px;"><strong>2. Prezzi & scenario</strong><br><span style="color:#64748b;">Campo editabile per i prezzi energia/mercato</span></div>
+        <div style="border-left:3px solid #22d3ee;padding-left:8px;margin-bottom:4px;"><strong>3. Ottimizzazione</strong><br><span style="color:#64748b;">Bottone "Ottimizza" → barra avanzamento → risultati</span></div>
+        <div style="border-left:3px solid #4ade80;padding-left:8px;"><strong>4. Risultati</strong><br><span style="color:#64748b;">Rotta raccomandata, parametri ottimali, Pareto front 2D/3D, tabella confronto rotte</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div style="color:#94a3b8;font-size:0.8em;margin-bottom:6px;">Mockup pagina Risultati</div>
+      <div style="background:#0f172a;border-radius:6px;padding:0.75rem;font-size:0.78em;">
+        <div style="color:#4ade80;font-weight:600;margin-bottom:6px;">✓ Rotta raccomandata: SOLVENTE (T3.2)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:8px;">
+          <div style="background:#1e293b;padding:4px 6px;border-radius:4px;text-align:center;">
+            <div style="color:#67e8f9;font-size:1.1em;font-weight:600;">94.2%</div>
+            <div style="color:#64748b;font-size:0.85em;">Purezza PVC</div>
+          </div>
+          <div style="background:#1e293b;padding:4px 6px;border-radius:4px;text-align:center;">
+            <div style="color:#67e8f9;font-size:1.1em;font-weight:600;">87.5%</div>
+            <div style="color:#64748b;font-size:0.85em;">Resa massa</div>
+          </div>
+          <div style="background:#1e293b;padding:4px 6px;border-radius:4px;text-align:center;">
+            <div style="color:#fcd34d;font-size:1.1em;font-weight:600;">€142/t</div>
+            <div style="color:#64748b;font-size:0.85em;">Margine netto</div>
+          </div>
+        </div>
+        <div style="background:#1e293b;padding:6px;border-radius:4px;">
+          <div style="color:#94a3b8;font-size:0.85em;margin-bottom:4px;">Parametri ottimali suggeriti:</div>
+          <div style="color:#cbd5e1;font-size:0.82em;line-height:1.7;">
+            solvent_conc: <strong>42%</strong> &nbsp;|&nbsp; temp: <strong>120°C</strong><br>
+            time: <strong>90 min</strong> &nbsp;|&nbsp; S/L ratio: <strong>80 g/L</strong>
+          </div>
+        </div>
+        <div style="margin-top:6px;background:#1e293b;padding:6px;border-radius:4px;">
+          <div style="color:#94a3b8;font-size:0.85em;">Pareto front (Purezza vs Margine)</div>
+          <div style="height:50px;display:flex;align-items:flex-end;gap:2px;padding-top:4px;">
+            <div style="width:8px;background:#6366f1;height:20px;border-radius:2px 2px 0 0;"></div>
+            <div style="width:8px;background:#6366f1;height:32px;border-radius:2px 2px 0 0;"></div>
+            <div style="width:8px;background:#6366f1;height:40px;border-radius:2px 2px 0 0;"></div>
+            <div style="width:8px;background:#4ade80;height:46px;border-radius:2px 2px 0 0;"></div>
+            <div style="width:8px;background:#6366f1;height:44px;border-radius:2px 2px 0 0;"></div>
+            <div style="width:8px;background:#6366f1;height:38px;border-radius:2px 2px 0 0;"></div>
+            <div style="width:8px;background:#6366f1;height:30px;border-radius:2px 2px 0 0;"></div>
+            <div style="width:8px;background:#6366f1;height:18px;border-radius:2px 2px 0 0;"></div>
+            <div style="color:#64748b;font-size:0.75em;align-self:center;padding-left:4px;">← soluzione sel.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTEBOOKS -->
+<div style="background:#1e293b;border-radius:8px;border-left:4px solid #a78bfa;padding:1rem;margin-bottom:1rem;">
+  <div style="color:#c4b5fd;font-weight:600;margin-bottom:0.75rem;">Notebook Jupyter — per ricercatori</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;font-size:0.8em;">
+    <div style="background:#0f172a;padding:0.6rem;border-radius:6px;">
+      <div style="color:#6366f1;font-weight:600;margin-bottom:4px;">01_data_generation</div>
+      <div style="color:#64748b;line-height:1.6;">Genera il DB sintetico. Visualizza distribuzioni e correlazioni. Salva CSV.</div>
+    </div>
+    <div style="background:#0f172a;padding:0.6rem;border-radius:6px;">
+      <div style="color:#22d3ee;font-weight:600;margin-bottom:4px;">02_model_training</div>
+      <div style="color:#64748b;line-height:1.6;">Addestra i 15 surrogate models. Mostra R², RMSE, feature importance per rotta.</div>
+    </div>
+    <div style="background:#0f172a;padding:0.6rem;border-radius:6px;">
+      <div style="color:#f59e0b;font-weight:600;margin-bottom:4px;">03_optimization</div>
+      <div style="color:#64748b;line-height:1.6;">Esegue NSGA-II sulle 3 rotte. Visualizza Pareto front 2D/3D, confronto rotte.</div>
+    </div>
+    <div style="background:#0f172a;padding:0.6rem;border-radius:6px;">
+      <div style="color:#4ade80;font-weight:600;margin-bottom:4px;">04_sensitivity</div>
+      <div style="color:#64748b;line-height:1.6;">Analisi di sensitività: come cambiano i risultati al variare dei prezzi energia/mercato.</div>
+    </div>
+  </div>
+</div>
+
+<!-- STRUTTURA FILE -->
+<div style="background:#0f172a;border-radius:8px;padding:1rem;font-family:monospace;font-size:0.8em;color:#94a3b8;">
+  <div style="color:#cbd5e1;margin-bottom:0.5rem;">Struttura cartelle progetto</div>
+  <div style="line-height:1.9;">
+    <span style="color:#6366f1;">retain_dss/</span><br>
+    &nbsp;&nbsp;<span style="color:#a5b4fc;">data/</span> generator.py · schema.py · loader.py<br>
+    &nbsp;&nbsp;<span style="color:#67e8f9;">models/</span> trainer.py · predictor.py · evaluator.py<br>
+    &nbsp;&nbsp;<span style="color:#fcd34d;">optimizer/</span> genetic.py · objectives.py · route_selector.py<br>
+    &nbsp;&nbsp;<span style="color:#86efac;">ui/</span> app.py (Streamlit)<br>
+    <span style="color:#c4b5fd;">notebooks/</span> 01_data · 02_models · 03_optimization · 04_sensitivity<br>
+    <span style="color:#64748b;">data/synthetic/</span> route1.csv · route2.csv · route3.csv<br>
+    <span style="color:#64748b;">models/saved/</span> *.pkl (modelli serializzati)<br>
+    requirements.txt · README.md
+  </div>
+</div>

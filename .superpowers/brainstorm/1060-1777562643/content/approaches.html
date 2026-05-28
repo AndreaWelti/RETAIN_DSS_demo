@@ -1,0 +1,63 @@
+<h2>3 approcci architetturali</h2>
+<p class="subtitle">Scegli quello che si adatta meglio al contesto RETAIN T3.4</p>
+
+<div class="options">
+
+  <div class="option" data-choice="layered-package" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>✦ Pacchetto Python a livelli + Streamlit <span style="font-size:0.75em;color:#4ade80;">(consigliato)</span></h3>
+      <p>Un package <code>retain_dss/</code> con moduli separati: <code>data/</code>, <code>models/</code>, <code>optimizer/</code>, <code>ui/</code>.<br>
+      Streamlit come web UI per operatori. Jupyter notebook come layer di analisi che importa lo stesso package.</p>
+      <div class="pros-cons" style="margin-top:0.75rem;">
+        <div class="pros"><h4>Pro</h4><ul>
+          <li>Struttura pulita — dati reali sostituiscono i sintetici senza riscrivere nulla</li>
+          <li>Notebook e UI condividono lo stesso codice</li>
+          <li>Facilmente estendibile a nuove rotte</li>
+        </ul></div>
+        <div class="cons"><h4>Contro</h4><ul>
+          <li>Richiede più setup iniziale rispetto a semplici notebook</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="notebook-suite" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Suite di notebook Jupyter</h3>
+      <p>3–4 notebook sequenziali: generazione dati → training modelli ML → ottimizzazione GA → risultati/grafici.<br>
+      Nessuna UI separata: tutto si esegue in Jupyter.</p>
+      <div class="pros-cons" style="margin-top:0.75rem;">
+        <div class="pros"><h4>Pro</h4><ul>
+          <li>Rapidissimo da sviluppare</li>
+          <li>Ottimo per presentazioni e demo narrative</li>
+        </ul></div>
+        <div class="cons"><h4>Contro</h4><ul>
+          <li>Non fruibile da ingegneri senza Python</li>
+          <li>Codice difficile da riusare quando arrivano dati reali</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="api-first" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Backend FastAPI + frontend</h3>
+      <p>API REST Python (FastAPI) che espone endpoint di ottimizzazione. Frontend Streamlit o HTML chiama le API.<br>
+      Notebook chiamano le stesse API.</p>
+      <div class="pros-cons" style="margin-top:0.75rem;">
+        <div class="pros"><h4>Pro</h4><ul>
+          <li>Massimamente scalabile e deployabile</li>
+          <li>Adatto se in futuro il tool deve essere esposto come servizio</li>
+        </ul></div>
+        <div class="cons"><h4>Contro</h4><ul>
+          <li>Eccessivamente complesso per una simulazione dummy</li>
+          <li>Introduce overhead HTTP non necessario in fase di prototipo</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>

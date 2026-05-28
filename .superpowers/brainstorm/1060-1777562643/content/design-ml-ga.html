@@ -1,0 +1,106 @@
+<h2>Design — Sezione 3: Modelli ML + Ottimizzatore GA</h2>
+<p class="subtitle">Surrogate models per ciascuna rotta + NSGA-II multi-obiettivo</p>
+
+<!-- ML MODELS -->
+<div style="background:#1e293b;border-radius:8px;border-left:4px solid #22d3ee;padding:1rem;margin-bottom:1rem;">
+  <div style="color:#67e8f9;font-weight:600;margin-bottom:0.75rem;">LAYER 2 — Surrogate Models (uno per rotta × per output)</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div>
+      <div style="color:#94a3b8;font-size:0.8em;margin-bottom:6px;">Architettura</div>
+      <ul style="color:#cbd5e1;font-size:0.82em;line-height:1.9;padding-left:1.2rem;">
+        <li><strong>Algoritmo:</strong> Gradient Boosting (XGBoost/LightGBM) — default</li>
+        <li><strong>Input:</strong> 8 variabili materiale + 6 parametri processo</li>
+        <li><strong>Output:</strong> un modello per ciascun KPI fisico (purezza, resa, energia_el, energia_th...)</li>
+        <li><strong>Totale modelli:</strong> ~5 per rotta × 3 rotte = 15 modelli</li>
+        <li><strong>Training:</strong> 80/20 split, cross-validation 5-fold</li>
+        <li><strong>Metriche:</strong> R², RMSE, feature importance</li>
+      </ul>
+    </div>
+    <div>
+      <div style="color:#94a3b8;font-size:0.8em;margin-bottom:6px;">Perché surrogate model?</div>
+      <div style="background:#0f172a;padding:0.75rem;border-radius:6px;font-size:0.8em;color:#94a3b8;line-height:1.7;">
+        Il GA deve valutare <strong style="color:#cbd5e1;">migliaia di soluzioni candidate</strong> per generazione.<br>
+        Chiamare una simulazione numerica ad ogni valutazione sarebbe troppo lento.<br>
+        Il surrogate model è <strong style="color:#67e8f9;">~1000× più veloce</strong> e sufficientemente accurato per guidare l'ottimizzazione.
+      </div>
+      <div style="margin-top:0.75rem;background:#0f172a;padding:0.75rem;border-radius:6px;font-size:0.8em;color:#94a3b8;">
+        I KPI economici (<code>opex</code>, <code>revenue</code>, <code>net_margin</code>) sono calcolati <strong style="color:#fcd34d;">analiticamente</strong> sopra le predizioni fisiche — nessun modello ML separato.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GA OPTIMIZER -->
+<div style="background:#1e293b;border-radius:8px;border-left:4px solid #f59e0b;padding:1rem;margin-bottom:1rem;">
+  <div style="color:#fcd34d;font-weight:600;margin-bottom:0.75rem;">LAYER 3 — Algoritmo Genetico NSGA-II (libreria: pymoo)</div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;">
+    <div>
+      <div style="color:#94a3b8;font-size:0.8em;margin-bottom:6px;">Flusso di ottimizzazione</div>
+      <div style="font-size:0.82em;color:#cbd5e1;line-height:1.9;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="background:#6366f1;color:white;padding:2px 8px;border-radius:4px;font-size:0.85em;">1</span>
+          <span>L'utente inserisce le proprietà del telo in ingresso</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="background:#6366f1;color:white;padding:2px 8px;border-radius:4px;font-size:0.85em;">2</span>
+          <span>GA ottimizza i parametri di processo di <strong>ciascuna rotta separatamente</strong> (3 run paralleli)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="background:#6366f1;color:white;padding:2px 8px;border-radius:4px;font-size:0.85em;">3</span>
+          <span>Per ogni rotta → Pareto front sui 5 obiettivi</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="background:#6366f1;color:white;padding:2px 8px;border-radius:4px;font-size:0.85em;">4</span>
+          <span><code>route_selector</code> confronta i 3 Pareto front e identifica la rotta dominante</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="background:#4ade80;color:#0f172a;padding:2px 8px;border-radius:4px;font-size:0.85em;">✓</span>
+          <span>Output: <strong>rotta raccomandata</strong> + parametri ottimali + Pareto front visualizzato</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="color:#94a3b8;font-size:0.8em;margin-bottom:6px;">Configurazione NSGA-II</div>
+      <table style="width:100%;font-size:0.78em;color:#cbd5e1;border-collapse:collapse;">
+        <tr><td style="padding:3px 6px;color:#94a3b8;">Popolazione</td><td>100</td></tr>
+        <tr style="background:#0f172a;"><td style="padding:3px 6px;color:#94a3b8;">Generazioni</td><td>200</td></tr>
+        <tr><td style="padding:3px 6px;color:#94a3b8;">Crossover</td><td>SBX (η=15)</td></tr>
+        <tr style="background:#0f172a;"><td style="padding:3px 6px;color:#94a3b8;">Mutazione</td><td>Polinomiale (η=20)</td></tr>
+        <tr><td style="padding:3px 6px;color:#94a3b8;">Obiettivi</td><td>5 (min/max)</td></tr>
+        <tr style="background:#0f172a;"><td style="padding:3px 6px;color:#94a3b8;">Vincoli</td><td>range fisici</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 5 OBIETTIVI -->
+<div style="background:#1e293b;border-radius:8px;border-left:4px solid #4ade80;padding:1rem;">
+  <div style="color:#86efac;font-weight:600;margin-bottom:0.5rem;">5 Obiettivi del GA (tutti normalizzati [0,1])</div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.5rem;font-size:0.78em;text-align:center;">
+    <div style="background:#0f172a;padding:0.5rem;border-radius:6px;">
+      <div style="color:#22d3ee;font-size:1.2em;">↑</div>
+      <div style="color:#cbd5e1;font-weight:600;">Purezza</div>
+      <div style="color:#64748b;">PVC / PET %</div>
+    </div>
+    <div style="background:#0f172a;padding:0.5rem;border-radius:6px;">
+      <div style="color:#22d3ee;font-size:1.2em;">↑</div>
+      <div style="color:#cbd5e1;font-weight:600;">Resa</div>
+      <div style="color:#64748b;">% in massa</div>
+    </div>
+    <div style="background:#0f172a;padding:0.5rem;border-radius:6px;">
+      <div style="color:#22d3ee;font-size:1.2em;">↑</div>
+      <div style="color:#cbd5e1;font-weight:600;">Qualità</div>
+      <div style="color:#64748b;">Props. meccaniche</div>
+    </div>
+    <div style="background:#0f172a;padding:0.5rem;border-radius:6px;">
+      <div style="color:#f59e0b;font-size:1.2em;">↓</div>
+      <div style="color:#cbd5e1;font-weight:600;">Energia</div>
+      <div style="color:#64748b;">kWh_el + kWh_th</div>
+    </div>
+    <div style="background:#0f172a;padding:0.5rem;border-radius:6px;">
+      <div style="color:#22d3ee;font-size:1.2em;">↑</div>
+      <div style="color:#cbd5e1;font-weight:600;">Margine</div>
+      <div style="color:#64748b;">€/t netto</div>
+    </div>
+  </div>
+</div>

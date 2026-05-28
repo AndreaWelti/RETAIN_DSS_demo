@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RETAIN DSS — How It Works</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:#3b82f6; --amber:#f59e0b; --green:#22c55e; --purple:#a855f7;
+      --rose:#f43f5e; --dark:#0f172a; --card:#1e293b; --muted:#94a3b8;
+      --text:#e2e8f0; --white:#ffffff;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--dark); color:var(--text); line-height:1.7; }
+    h1,h2,h3 { line-height:1.25; }
+
+    /* ── Hero ─────────────────────────────────────────────────────────── */
+    .hero {
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      padding:3rem 1.5rem;
+      background:radial-gradient(ellipse 80% 60% at 50% 0%,#1d4ed820 0%,transparent 70%);
+      position:relative; overflow:hidden;
+    }
+    .hero::before {
+      content:""; position:absolute; inset:0;
+      background-image:radial-gradient(circle at 20% 30%,#3b82f615 0%,transparent 40%),
+                       radial-gradient(circle at 80% 70%,#a855f715 0%,transparent 40%);
+      animation:bgPulse 8s ease-in-out infinite alternate;
+    }
+    @keyframes bgPulse { from{opacity:.6} to{opacity:1} }
+    .hero-badge {
+      display:inline-block; background:linear-gradient(135deg,#3b82f620,#a855f720);
+      border:1px solid #3b82f640; border-radius:999px; padding:.35rem 1.1rem;
+      font-size:.8rem; letter-spacing:.1em; text-transform:uppercase; color:var(--blue);
+      margin-bottom:1.5rem; position:relative;
+    }
+    .hero h1 {
+      font-size:clamp(2.2rem,6vw,4rem); font-weight:800;
+      background:linear-gradient(135deg,#60a5fa,#c084fc,#34d399);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      background-clip:text; margin-bottom:1.25rem; position:relative;
+    }
+    .hero p { font-size:clamp(1rem,2.5vw,1.3rem); color:var(--muted); max-width:680px; position:relative; }
+    .scroll-hint { position:absolute; bottom:2rem; font-size:.85rem; color:var(--muted); animation:bounce 2s infinite; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(8px)} }
+
+    /* ── Flow ─────────────────────────────────────────────────────────── */
+    .flow-section { padding:4rem 1.5rem 2rem; text-align:center; }
+    .flow-section h2 { font-size:1.8rem; color:var(--white); margin-bottom:2.5rem; }
+    .flow-row { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:.5rem; max-width:1100px; margin:0 auto; }
+    .flow-node { display:flex; flex-direction:column; align-items:center; gap:.5rem; cursor:pointer; transition:transform .2s; }
+    .flow-node:hover { transform:translateY(-4px); }
+    .flow-icon { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; transition:box-shadow .3s; }
+    .flow-node:hover .flow-icon { box-shadow:0 0 24px currentColor; }
+    .flow-label { font-size:.75rem; color:var(--muted); max-width:80px; text-align:center; }
+    .flow-arrow { font-size:1.5rem; color:#334155; padding:0 .25rem; }
+    .n1 .flow-icon{background:#3b82f620;color:var(--blue);  border:2px solid var(--blue);}
+    .n2 .flow-icon{background:#a855f720;color:var(--purple);border:2px solid var(--purple);}
+    .n3 .flow-icon{background:#f59e0b20;color:var(--amber); border:2px solid var(--amber);}
+    .n4 .flow-icon{background:#22c55e20;color:var(--green); border:2px solid var(--green);}
+    .n5 .flow-icon{background:#f43f5e20;color:var(--rose);  border:2px solid var(--rose);}
+    .n6 .flow-icon{background:#f59e0b20;color:#fcd34d;      border:2px solid #fcd34d;}
+
+    /* ── Sections ─────────────────────────────────────────────────────── */
+    .step-section { max-width:1100px; margin:0 auto; padding:3rem 1.5rem; opacity:0; transform:translateY(30px); transition:opacity .6s ease,transform .6s ease; }
+    .step-section.visible { opacity:1; transform:translateY(0); }
+    .step-header { display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; }
+    .step-num { min-width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800; }
+    .step-section h2 { font-size:1.6rem; color:var(--white); }
+    .step-section h3 { font-size:1.2rem; color:var(--muted); font-weight:400; margin-top:.25rem; }
+    .card { background:var(--card); border-radius:16px; padding:1.5rem; border:1px solid #334155; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+    @media(max-width:700px){.two-col{grid-template-columns:1fr;}}
+    .bubble { background:#0f172a; border-radius:12px; padding:1.25rem 1.5rem; font-size:1rem; line-height:1.8; border-left:4px solid; }
+    .b-blue{border-color:var(--blue);} .b-purple{border-color:var(--purple);}
+    .b-amber{border-color:var(--amber);} .b-green{border-color:var(--green);}
+    .b-rose{border-color:var(--rose);} .b-gold{border-color:#fcd34d;}
+    .fun-fact { background:linear-gradient(135deg,#1e3a5f,#2d1b69); border-radius:12px; padding:1rem 1.5rem; margin-top:1rem; font-size:.95rem; }
+    .fun-fact::before { content:"💡 "; font-size:1.1rem; }
+
+    /* ── Info button + tooltip ────────────────────────────────────────── */
+    .info-btn {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:18px; height:18px; border-radius:50%;
+      background:#1e3a5f; color:#93c5fd;
+      border:1px solid #3b82f660; font-size:10px; font-weight:800;
+      cursor:pointer; position:relative; vertical-align:middle;
+      margin-left:5px; flex-shrink:0; line-height:1;
+      transition:background .2s, border-color .2s;
+      user-select:none;
+    }
+    .info-btn:hover, .info-btn.active { background:#2563eb; border-color:#3b82f6; }
+    .info-tip {
+      display:none; position:fixed; z-index:9999;
+      background:#0f172a; border:1px solid #3b82f6;
+      border-radius:10px; padding:.9rem 1rem;
+      width:290px; font-size:.8rem; line-height:1.65;
+      color:#cbd5e1; text-align:left; font-weight:400;
+      box-shadow:0 12px 40px #0009;
+      pointer-events:none;
+    }
+    .info-tip.visible { display:block; }
+
+    /* ── Route cards ──────────────────────────────────────────────────── */
+    .route-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1.25rem; margin-top:1.25rem; }
+    .route-card { background:var(--card); border-radius:14px; padding:1.25rem; border:2px solid transparent; cursor:pointer; transition:border-color .25s,transform .25s; }
+    .route-card:hover { transform:translateY(-4px); }
+    .route-card.r1{border-color:var(--blue);} .route-card.r2{border-color:var(--amber);} .route-card.r3{border-color:var(--green);}
+    .route-card .emoji { font-size:2.5rem; margin-bottom:.75rem; }
+    .route-card h4 { font-size:1rem; color:var(--white); margin-bottom:.5rem; }
+    .route-card p  { font-size:.88rem; color:var(--muted); line-height:1.6; }
+    .badge { display:inline-block; border-radius:999px; padding:.2rem .75rem; font-size:.75rem; font-weight:700; margin-top:.75rem; }
+    .badge-blue{background:#1d4ed840;color:#93c5fd;} .badge-amber{background:#78350f40;color:#fcd34d;} .badge-green{background:#14532d40;color:#86efac;}
+
+    /* ── Plot boxes ───────────────────────────────────────────────────── */
+    .plot-box { background:var(--card); border-radius:16px; padding:1.25rem; border:1px solid #334155; margin-top:1.25rem; }
+    .plot-box h4 { font-size:1rem; color:var(--muted); margin-bottom:1rem; text-align:center; }
+
+    /* ── Sliders ──────────────────────────────────────────────────────── */
+    .slider-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem 2rem; margin-bottom:1.25rem; }
+    @media(max-width:600px){.slider-grid{grid-template-columns:1fr;}}
+    .slider-row label { display:flex; justify-content:space-between; align-items:center; font-size:.82rem; color:var(--muted); margin-bottom:.3rem; }
+    .slider-row label .lbl-left { display:flex; align-items:center; gap:2px; }
+    .slider-row label span.val { color:var(--white); font-weight:600; }
+    .slider-row input[type=range] { width:100%; accent-color:var(--blue); cursor:pointer; }
+
+    /* ── Buttons ──────────────────────────────────────────────────────── */
+    .ctrl-bar { display:flex; align-items:center; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+    .btn { padding:.5rem 1.25rem; border-radius:8px; border:none; cursor:pointer; font-size:.9rem; font-weight:600; transition:opacity .2s; }
+    .btn:hover { opacity:.85; }
+    .btn-blue{background:var(--blue);color:white;} .btn-amber{background:var(--amber);color:#1c1c1c;} .btn-green{background:var(--green);color:#1c1c1c;}
+    .btn-red{background:#ef4444;color:white;} .btn-gray{background:#334155;color:var(--text);}
+    .gen-label { font-size:.9rem; color:var(--muted); }
+
+    /* ── HV canvas ────────────────────────────────────────────────────── */
+    #hvCanvas { border-radius:12px; background:#0f172a; display:block; margin:0 auto; max-width:100%; }
+    .hv-legend { display:flex; gap:1.5rem; justify-content:center; margin-top:.75rem; font-size:.82rem; flex-wrap:wrap; }
+    .hv-legend span { display:flex; align-items:center; gap:.4rem; color:var(--muted); }
+    .hv-dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    #hvStatus { text-align:center; font-size:.88rem; color:var(--muted); min-height:1.6em; margin-top:.6rem; }
+    #hvProgress { text-align:center; font-size:.8rem; color:#475569; margin-top:.25rem; }
+
+    /* HV bar chart area */
+    #hvBarArea { margin-top:1rem; }
+    .hv-bar-row { display:flex; align-items:center; gap:.75rem; margin-bottom:.5rem; }
+    .hv-bar-label { font-size:.8rem; color:var(--muted); width:110px; text-align:right; flex-shrink:0; }
+    .hv-bar-track { flex:1; background:#0f172a; border-radius:999px; height:18px; overflow:hidden; border:1px solid #1e293b; }
+    .hv-bar-fill { height:100%; border-radius:999px; transition:width .4s ease; display:flex; align-items:center; justify-content:flex-end; padding-right:6px; font-size:.72rem; font-weight:700; }
+    .hv-bar-val { font-size:.8rem; color:var(--muted); width:42px; flex-shrink:0; }
+
+    /* ── Result mock ──────────────────────────────────────────────────── */
+    .result-mock { background:#0f172a; border-radius:14px; padding:1.5rem; text-align:center; }
+    .result-mock .winner-badge { font-size:2.5rem; margin-bottom:.75rem; }
+    .result-mock h3 { color:#fcd34d; font-size:1.4rem; margin-bottom:.5rem; }
+    .result-mock p  { color:var(--muted); font-size:.9rem; }
+    .kpi-row { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; margin-top:1.25rem; }
+    .kpi-chip { background:var(--card); border-radius:10px; padding:.75rem 1.25rem; text-align:center; border:1px solid #334155; min-width:110px; }
+    .kpi-chip .kpi-val { font-size:1.4rem; font-weight:700; }
+    .kpi-chip .kpi-lbl { font-size:.7rem; color:var(--muted); margin-top:.2rem; display:flex; align-items:center; justify-content:center; }
+
+    /* ── Misc ─────────────────────────────────────────────────────────── */
+    .sec-divider { border:none; border-top:1px solid #1e293b; max-width:1100px; margin:0 auto; }
+    footer { text-align:center; padding:3rem 1.5rem; color:var(--muted); font-size:.82rem; border-top:1px solid #1e293b; }
+    footer strong { color:var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- ── Hidden tooltip bubble (shared) ──────────────────────────────── -->
+<div class="info-tip" id="globalTip"></div>
+
+<!-- ═══════════ HERO ════════════════════════════════════════════════ -->
+<section class="hero">
+  <h1>How does RETAIN DSS work?</h1>
+  <p>A simple guide to the magic behind the tool — from old tarpaulin to recycled treasure! 🎉</p>
+  <div class="scroll-hint">↓ scroll to explore ↓</div>
+</section>
+
+<!-- ═══════════ FLOW ═════════════════════════════════════════════════ -->
+<section class="flow-section">
+  <h2>The 6 steps of the tool</h2>
+  <div class="flow-row">
+    <div class="flow-node n1"><div class="flow-icon">📥</div><div class="flow-label">Describe the tarpaulin</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node n2"><div class="flow-icon">🧠</div><div class="flow-label">AI predicts outcomes</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node n3"><div class="flow-icon">♻️</div><div class="flow-label">3 recycling recipes</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node n4"><div class="flow-icon">🧬</div><div class="flow-label">Find best settings</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node n5"><div class="flow-icon">📐</div><div class="flow-label">Compare recipes</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node n6"><div class="flow-icon">🏆</div><div class="flow-label">Recommend winner</div></div>
+  </div>
+</section>
+<hr class="sec-divider"/>
+
+<!-- ═══════════ STEP 1 ══════════════════════════════════════════════ -->
+<section class="step-section" id="step1">
+  <div class="step-header">
+    <div class="step-num" style="background:#1d4ed840;color:#60a5fa;">1</div>
+    <div>
+      <h2>📥 Tell us about your tarpaulin</h2>
+      <h3>What is it made of? How dirty is it? How old is it?</h3>
+    </div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="bubble b-blue">
+        Imagine you found an old truck blanket made of two plastics —
+        <strong>PVC</strong> (the soft, flexible part) and
+        <strong>PET</strong> (the strong fibres inside, like in a plastic bottle). 🎒
+        <br><br>
+        Before we recycle it, we need to tell the computer a few things about it.
+        It's like filling in a school report card — but for the tarpaulin!
+      </div>
+      <div class="fun-fact">PVC is the same plastic used in garden hoses and raincoats. PET is the same plastic used in fizzy-drink bottles!</div>
+    </div>
+    <div class="card">
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;text-align:center;">
+        🎮 <strong>Try it!</strong> Move the sliders — hover the <span style="color:#93c5fd">?</span> buttons for details.
+      </p>
+      <div class="slider-grid" id="sliderGrid"></div>
+    </div>
+  </div>
+  <div class="plot-box">
+    <h4>Material profile — the computer sees this "shape" for every tarpaulin</h4>
+    <div id="radarChart" style="height:320px;"></div>
+  </div>
+</section>
+<hr class="sec-divider"/>
+
+<!-- ═══════════ STEP 2 ══════════════════════════════════════════════ -->
+<section class="step-section" id="step2">
+  <div class="step-header">
+    <div class="step-num" style="background:#7c3aed30;color:#c084fc;">2</div>
+    <div>
+      <h2>🧠 The AI brain predicts what will happen</h2>
+      <h3>No real experiment needed — the computer already knows!</h3>
+    </div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="bubble b-purple">
+        Imagine a very clever student who has watched <strong>10 000 recycling experiments</strong> and took perfect notes every time.
+        Now, whenever you give them a new tarpaulin, they can guess the result without running a single experiment! 🔮
+        <br><br>
+        RETAIN DSS uses <strong>21 such AI models</strong> (called <em>XGBoost</em>).
+        Each model learned a different thing: one predicts purity, another predicts energy use, another predicts how much material you get back, and so on.
+      </div>
+      <div class="fun-fact">XGBoost won dozens of data science competitions around the world — it is like the world-champion student!</div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:1rem;">
+      <p style="font-size:.88rem;color:var(--muted);">
+        Each model gets <strong>14 numbers</strong> as input
+        <button class="info-btn" data-tip="8 material inputs + 6 process parameters for the chosen route. These 14 numbers fully describe both the feedstock and the operating conditions.">?</button>
+        and produces one prediction. Route 1 → <strong>5 models</strong>, Route 2 → <strong>7 models</strong>, Route 3 → <strong>9 models</strong> = <strong>21 models total</strong>.
+      </p>
+      <div id="modelGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;"></div>
+    </div>
+  </div>
+  <div class="plot-box">
+    <h4>How accurate are the models? — illustrative example for <strong style="color:#a855f7">PVC Purity (%)</strong>: AI predictions vs. real experiment values</h4>
+    <div id="predVsReal" style="height:300px;"></div>
+  </div>
+</section>
+<hr class="sec-divider"/>
+
+<!-- ═══════════ STEP 3 ══════════════════════════════════════════════ -->
+<section class="step-section" id="step3">
+  <div class="step-header">
+    <div class="step-num" style="background:#78350f30;color:#fcd34d;">3</div>
+    <div>
+      <h2>♻️ Three different recycling recipes</h2>
+      <h3>Like three different ways to cook the same ingredient</h3>
+    </div>
+  </div>
+  <div class="bubble b-amber" style="margin-bottom:1.25rem;">
+    There is no single "perfect" way to recycle an old tarpaulin. RETAIN tests <strong>three completely different methods</strong> at the same time — and then picks the best one for YOUR tarpaulin. Click each card to learn more!
+  </div>
+  <div class="route-cards">
+    <div class="route-card r1" onclick="showRouteDetail(1)">
+      <div class="emoji">🔨</div>
+      <h4>T3.1 — Mechanical Recycling</h4>
+      <p>Grind the tarpaulin into tiny pieces, then use electricity to sort the PVC from the PET — like a really smart sieve! No chemicals needed.</p>
+      <span class="badge badge-blue">🔌 Low energy · No chemicals</span>
+    </div>
+    <div class="route-card r2" onclick="showRouteDetail(2)">
+      <div class="emoji">🧪</div>
+      <h4>T3.2 — Solvent Recycling (Texyloop)</h4>
+      <p>Dip the pieces in a hot magic liquid (solvent). The PVC melts into it, PET stays solid. Then cool the liquid — PVC re-forms as super-clean granules!</p>
+      <span class="badge badge-amber">🌟 Highest PVC purity</span>
+    </div>
+    <div class="route-card r3" onclick="showRouteDetail(3)">
+      <div class="emoji">💰</div>
+      <h4>T3.3 — Additive Extraction</h4>
+      <p>Wash out the expensive chemical additives (plasticisers & stabilisers) without dissolving the plastic. Like extracting the special sauce!</p>
+      <span class="badge badge-green">💎 Recovers high-value chemicals</span>
+    </div>
+  </div>
+  <div class="plot-box">
+    <h4>Route trade-offs at a glance
+      <button class="info-btn" data-tip="All values are illustrative averages over the Pareto front for a typical feedstock. Energy and margin values are divided by 5 to fit the same axis as percentages.">?</button>
+    </h4>
+    <div id="routeBar" style="height:340px;"></div>
+  </div>
+</section>
+<hr class="sec-divider"/>
+
+<!-- ═══════════ STEP 4 ══════════════════════════════════════════════ -->
+<section class="step-section" id="step4">
+  <div class="step-header">
+    <div class="step-num" style="background:#14532d30;color:#86efac;">4</div>
+    <div>
+      <h2>🧬 Finding the best recipe settings</h2>
+      <h3>Trying millions of combinations — like the world's biggest cooking show!</h3>
+    </div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="bubble b-green">
+        For each recycling recipe, there are 6 "dials" to turn (speed, temperature, time…).
+        If each dial has 100 possible positions, that's <strong>100⁶ = one trillion combinations</strong>! We can't try them all.
+        <br><br>
+        Instead, RETAIN uses a <strong>genetic algorithm (NSGA-II)</strong> — an idea copied from nature. 🐛→🦋
+        <br><br>
+        <ol style="margin-left:1.2rem;margin-top:.5rem;line-height:2;">
+          <li>Start with <strong>100 random guesses</strong> (generation 1)</li>
+          <li>Keep the best ones, mix them together, make tiny mutations</li>
+          <li>Repeat <strong>200 times</strong></li>
+          <li>After 200 generations, the survivors are near-perfect!</li>
+        </ol>
+      </div>
+    </div>
+    <div class="card">
+      <div class="fun-fact" style="margin:0 0 1rem 0;">
+        Nature invented genetic algorithms! Animals that are better at surviving have more children — after millions of generations, amazing creatures exist. We do the same, but in 200 steps! 🦁
+      </div>
+      <div style="font-size:.85rem;color:var(--muted);">
+        <strong>NSGA-II key settings:</strong>
+        <ul style="margin-top:.5rem;margin-left:1.2rem;line-height:2.2;">
+          <li>Population: 100 solutions per generation
+            <button class="info-btn" data-tip="100 'candidate recipes' exist at any time. Only the best ones survive to the next generation and have 'children'.">?</button>
+          </li>
+          <li>Generations: 200 rounds of evolution
+            <button class="info-btn" data-tip="After 200 rounds, each round taking ~0.3 seconds, the population has converged to the Pareto front — the best possible trade-off solutions.">?</button>
+          </li>
+          <li>Crossover (SBX): η = 15
+            <button class="info-btn" data-tip="Simulated Binary Crossover combines two 'parent' solutions to create offspring. η=15 means offspring stay close to parents — gentle mixing, not wild jumps.">?</button>
+          </li>
+          <li>Mutation (PM): η = 20
+            <button class="info-btn" data-tip="Polynomial Mutation adds a tiny random tweak to some parameters. η=20 means small perturbations, helping escape local optima without ruining good solutions.">?</button>
+          </li>
+          <li>Objectives: 5 goals simultaneously
+            <button class="info-btn" data-tip="The 5 objectives are: (1) maximise PVC purity, (2) maximise mass yield, (3) maximise material quality, (4) minimise total energy, (5) maximise net economic margin.">?</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="plot-box">
+    <h4>🧬 Watch the algorithm evolve! Press Play to see solutions improve over generations.</h4>
+    <div class="ctrl-bar">
+      <button class="btn btn-green" id="gaPlay">▶ Play Evolution</button>
+      <button class="btn btn-amber" id="gaReset">↺ Reset</button>
+      <span class="gen-label" id="gaGenLabel">Generation: 1 / 200</span>
+    </div>
+    <div id="gaChart" style="height:360px;"></div>
+  </div>
+</section>
+<hr class="sec-divider"/>
+
+<!-- ═══════════ STEP 5 ══════════════════════════════════════════════ -->
+<section class="step-section" id="step5">
+  <div class="step-header">
+    <div class="step-num" style="background:#9f123430;color:#fca5a5;">5</div>
+    <div>
+      <h2>📐 Comparing the three winners</h2>
+      <h3>Finding the route that covers the most "treasure space"</h3>
+    </div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="bubble b-rose">
+        After the algorithm finishes, each route gives us not just one answer, but a whole <strong>set of great answers called a Pareto front</strong>.
+        Think of it as a menu of the best trade-offs:
+        <br><br>
+        <em>"If you want very clean PVC, you need more energy. If you want less energy, the PVC will be a bit less clean."</em>
+        <br><br>
+        To pick the best route, we measure how much <strong>"treasure space"</strong> each front covers — the <strong>Hypervolume Indicator (HV)</strong>.
+        Bigger area = better route! 🎁
+      </div>
+      <div class="fun-fact">
+        The hypervolume is computed in 5 dimensions (5 objectives) in the real tool — but the idea is exactly the same as the 2D picture on the right!
+        <button class="info-btn" data-tip="In 5D, 'area' becomes 'hyper-volume'. Each Pareto solution dominates a 5D box toward the reference point (worst corner). The union of all boxes is the hypervolume. Bigger = better spread of good solutions.">?</button>
+      </div>
+    </div>
+    <div class="card">
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:.75rem;">
+        <strong>Step-by-step animation:</strong> press <em>Next Step</em> to build up each route's
+        hypervolume rectangle by rectangle, then see the final scores.
+      </p>
+      <canvas id="hvCanvas" width="400" height="300"></canvas>
+      <div class="hv-legend">
+        <span><span class="hv-dot" style="background:#3b82f6"></span>Route 1</span>
+        <span><span class="hv-dot" style="background:#f59e0b"></span>Route 2</span>
+        <span><span class="hv-dot" style="background:#22c55e"></span>Route 3</span>
+      </div>
+      <div id="hvStatus">Press <em>Next Step</em> to start</div>
+      <div id="hvProgress"></div>
+      <div class="ctrl-bar" style="margin-top:.75rem;justify-content:center;">
+        <button class="btn btn-gray"  id="hvPrev">◀ Back</button>
+        <button class="btn btn-blue"  id="hvNext">Next Step ▶</button>
+        <button class="btn btn-amber" id="hvAuto">⚡ Auto</button>
+        <button class="btn btn-red"   id="hvResetBtn">↺</button>
+      </div>
+      <div id="hvBarArea"></div>
+    </div>
+  </div>
+  <div class="plot-box">
+    <h4>Pareto front for all 3 routes — PVC Purity vs. Net Margin
+      <button class="info-btn" data-tip="Each dot is one Pareto-optimal solution found by NSGA-II. The star marks the solution with the best PVC purity on the recommended route. Hover any dot for details.">?</button>
+    </h4>
+    <div id="paretoChart" style="height:380px;"></div>
+  </div>
+</section>
+<hr class="sec-divider"/>
+
+<!-- ═══════════ STEP 6 ══════════════════════════════════════════════ -->
+<section class="step-section" id="step6">
+  <div class="step-header">
+    <div class="step-num" style="background:#78350f30;color:#fcd34d;">6</div>
+    <div>
+      <h2>🏆 The recommendation — your recycling champion!</h2>
+      <h3>The tool tells you exactly what to do</h3>
+    </div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="bubble b-gold">
+        After comparing the three routes, RETAIN DSS names a <strong>winner</strong> — the route that gives the best overall balance of purity, yield, energy, quality, and profit for YOUR tarpaulin.
+        <br><br>
+        It also gives you the <strong>exact settings</strong> to use: how fast to run the machine, what temperature to set, how long to wait… Every dial, already optimised for you! 🎛️
+      </div>
+      <div class="fun-fact">Finding these settings manually would take years of experiments. RETAIN DSS finds them in about 60 seconds!</div>
+    </div>
+    <div>
+      <div class="result-mock">
+        <div class="winner-badge">🏆</div>
+        <h3>T3.2 — Solvent / Texyloop Recycling</h3>
+        <p>Recommended for this tarpaulin based on hypervolume score</p>
+        <div class="kpi-row">
+          <div class="kpi-chip">
+            <div class="kpi-val" style="color:#60a5fa;">93.4%</div>
+            <div class="kpi-lbl">PVC Purity <button class="info-btn" data-tip="Purity of the recovered PVC fraction. Higher is better — food/medical grade requires ≥ 95%. Primary product quality spec.">?</button></div>
+          </div>
+          <div class="kpi-chip">
+            <div class="kpi-val" style="color:#86efac;">81.7%</div>
+            <div class="kpi-lbl">Mass Yield <button class="info-btn" data-tip="Fraction of input tarpaulin mass recovered as usable product. The remaining 18.3% is lost to rejects, washing, or impurities.">?</button></div>
+          </div>
+          <div class="kpi-chip">
+            <div class="kpi-val" style="color:#fca5a5;">312 kWh/t</div>
+            <div class="kpi-lbl">Energy <button class="info-btn" data-tip="Total electrical + thermal energy per tonne of input. Route 2 uses significant heat to dissolve PVC (~160 °C) then cool it back down.">?</button></div>
+          </div>
+          <div class="kpi-chip">
+            <div class="kpi-val" style="color:#fcd34d;">€287/t</div>
+            <div class="kpi-lbl">Net Margin <button class="info-btn" data-tip="Revenue from sold products minus all operating costs (energy, solvent, labour). Positive = profitable recycling.">?</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="plot-box">
+    <h4>Optimal process parameters for the recommended route
+      <button class="info-btn" data-tip="Each axis shows one process parameter normalised to 0–1 (0 = minimum allowed, 1 = maximum allowed). The amber shape is the NSGA-II optimum. Grey dotted shapes show what 'all low' or 'all high' settings would look like.">?</button>
+    </h4>
+    <div id="paramRadar" style="height:360px;"></div>
+    <div id="paramInfoGrid" style="margin-top:1.25rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.75rem;"></div>
+  </div>
+</section>
+<hr class="sec-divider"/>
+
+<!-- ═══════════ FOOTER ════════════════════════════════════════════════ -->
+<footer>
+  <p>
+    <strong>RETAIN DSS</strong> — Decision Support System for PVC/PET Tarpaulin Recycling<br>
+    EU Horizon Project RETAIN · Grant Agreement 101181056 · Work Package 3, Task 3.4<br>
+    Built with XGBoost · NSGA-II (pymoo) · Streamlit · Python
+  </p>
+</footer>
+
+<!-- ═══════════ SCRIPTS ═══════════════════════════════════════════════ -->
+<script>
+/* ── Scroll fade-in ──────────────────────────────────────────────── */
+const observer = new IntersectionObserver(
+  entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }),
+  { threshold: 0.08 }
+);
+document.querySelectorAll('.step-section').forEach(s => observer.observe(s));
+
+/* ── Global info-button tooltip ──────────────────────────────────── */
+(function() {
+  const tip = document.getElementById('globalTip');
+  let activeBtn = null;
+
+  function show(btn) {
+    if (activeBtn === btn) { hide(); return; }
+    if (activeBtn) activeBtn.classList.remove('active');
+    activeBtn = btn;
+    btn.classList.add('active');
+    tip.textContent = btn.dataset.tip;
+    tip.classList.add('visible');
+    position(btn);
+  }
+  function hide() {
+    tip.classList.remove('visible');
+    if (activeBtn) { activeBtn.classList.remove('active'); activeBtn = null; }
+  }
+  function position(btn) {
+    // getBoundingClientRect() → viewport coords; position:fixed also uses viewport coords
+    // Never add window.scrollY here — that is the document offset, not the viewport offset
+    const r   = btn.getBoundingClientRect();
+    const TW  = 290;                       // tooltip width (matches CSS)
+    let left  = r.left + r.width / 2 - TW / 2;
+    let top   = r.top - 110;              // place ABOVE btn (≈100 px height + 10 px gap)
+    // clamp horizontally inside viewport
+    left = Math.max(8, Math.min(left, window.innerWidth - TW - 8));
+    // if too close to top of viewport, flip it BELOW the button instead
+    if (top < 8) top = r.bottom + 8;
+    tip.style.left = left + 'px';
+    tip.style.top  = top  + 'px';
+  }
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.info-btn');
+    if (btn) { e.stopPropagation(); show(btn); }
+    else hide();
+  });
+})();
+
+/* ── Helpers ─────────────────────────────────────────────────────── */
+const DARK = {
+  paper_bgcolor:'transparent', plot_bgcolor:'#0f172a',
+  font:{color:'#94a3b8',family:'Segoe UI,system-ui,sans-serif'},
+  margin:{t:20,r:20,b:50,l:55},
+  xaxis:{gridcolor:'#1e293b',zerolinecolor:'#334155'},
+  yaxis:{gridcolor:'#1e293b',zerolinecolor:'#334155'},
+};
+const CFG = { responsive:true, displayModeBar:false };
+
+/* ═══════════ STEP 1 — sliders + radar ═══════════════════════════ */
+const matParams = [
+  { key:'pvc_content',         label:'PVC Content (%)',      min:40,  max:70,  def:55,
+    tip:'Mass fraction of PVC polymer in the tarpaulin. Higher → better suited to Routes 1 and 2 (direct PVC recovery). Typical truck tarps: 40–70 %wt.' },
+  { key:'pet_content',         label:'PET Content (%)',      min:20,  max:45,  def:32,
+    tip:'Mass fraction of PET fibres forming the woven scrim. PET gives the tarpaulin its tensile strength and tear resistance.' },
+  { key:'additive_content',    label:'Additive Content (%)', min:5,   max:20,  def:12,
+    tip:'Plasticisers (DINP, citrate esters), heat stabilisers (Ca/Zn), UV absorbers, pigments. High values favour Route 3 — recovered additives are worth €800–1200/t.' },
+  { key:'contamination_level', label:'Contamination (%)',    min:0,   max:15,  def:5,
+    tip:'Extraneous materials: soil, sand, oil/grease, paint, adhesives, biological matter, metal fragments. The single strongest negative predictor of output purity.' },
+  { key:'particle_size_d50',   label:'Particle Size (mm)',   min:0.5, max:50,  def:25,
+    tip:'Median particle diameter after primary shredding. Larger particles → coarser starting point for Route 1 milling. Smaller particles → faster dissolution/extraction kinetics for Routes 2 and 3.' },
+  { key:'moisture_content',    label:'Moisture (%)',         min:0,   max:8,   def:3,
+    tip:'Water absorbed in PET fibres and at PVC–PET interface. Impairs dissolution purity in Route 2, reduces extraction efficiency in Route 3. Pre-drying recommended above 5 %wt.' },
+  { key:'material_age',        label:'Age (years)',          min:1,   max:20,  def:8,
+    tip:'Service lifetime before collection — proxy for UV and thermal degradation. Older material has lower molecular weight PVC, migrated plasticiser, and reduced tensile strength.' },
+  { key:'tensile_strength',    label:'Tensile Str. (MPa)',   min:50,  max:300, def:175,
+    tip:'Ultimate tensile strength of the composite as received. Primary predictor of recovered polymer quality in Routes 2 and 3 — output tensile strength scales with this value.' },
+];
+const grid = document.getElementById('sliderGrid');
+matParams.forEach(p => {
+  const row = document.createElement('div');
+  row.className = 'slider-row';
+  row.innerHTML = `
+    <label>
+      <span class="lbl-left">${p.label} <button class="info-btn" data-tip="${p.tip}">?</button></span>
+      <span class="val" id="val_${p.key}">${p.def}</span>
+    </label>
+    <input type="range" id="sl_${p.key}" min="${p.min}" max="${p.max}" value="${p.def}" step="${(p.max-p.min)/100}">`;
+  grid.appendChild(row);
+});
+function drawRadar() {
+  const vals = matParams.map(p => {
+    const v = parseFloat(document.getElementById('sl_'+p.key).value);
+    return parseFloat(((v-p.min)/(p.max-p.min)).toFixed(3));
+  });
+  Plotly.react('radarChart', [{
+    type:'scatterpolar', fill:'toself', mode:'lines+markers',
+    r:[...vals,vals[0]], theta:[...matParams.map(p=>p.label),matParams[0].label],
+    fillcolor:'#3b82f630', line:{color:'#3b82f6',width:2},
+    marker:{color:'#60a5fa',size:6}, name:'Material profile',
+  }], {
+    ...DARK,
+    polar:{
+      bgcolor:'#0f172a',
+      radialaxis:{visible:true,range:[0,1],gridcolor:'#1e293b',tickfont:{color:'#475569'}},
+      angularaxis:{gridcolor:'#1e293b',linecolor:'#334155',tickfont:{color:'#94a3b8',size:10}},
+    },
+    showlegend:false, margin:{t:30,r:60,b:30,l:60},
+  }, CFG);
+}
+matParams.forEach(p => {
+  document.getElementById('sl_'+p.key).addEventListener('input', function() {
+    document.getElementById('val_'+p.key).textContent = parseFloat(this.value).toFixed(1);
+    drawRadar();
+  });
+});
+drawRadar();
+
+/* ═══════════ STEP 2 — model grid + pred vs real ═════════════════ */
+const modelData = [
+  { route:'R1 — Mechanical', outputs:['PVC purity','PET purity','Mass yield','Electrical energy','Output particle size'], color:'#3b82f6' },
+  { route:'R2 — Solvent',    outputs:['PVC purity','PET recovery','Mass yield','Electrical energy','Thermal energy','Tensile strength','Solvent consumed'], color:'#f59e0b' },
+  { route:'R3 — Extraction', outputs:['PVC purity','Mass yield','Electrical energy','Thermal energy','Tensile strength','Plasticiser recovery','Stabiliser recovery','Additive purity','Extractant consumed'], color:'#22c55e' },
+];
+const mgEl = document.getElementById('modelGrid');
+modelData.forEach(rd => {
+  const col = document.createElement('div');
+  col.style.cssText = 'background:#0f172a;border-radius:10px;padding:.75rem;border:1px solid '+rd.color+'40;';
+  col.innerHTML = `<div style="font-size:.75rem;font-weight:700;color:${rd.color};margin-bottom:.5rem;">${rd.route}<br><span style="color:#475569;">${rd.outputs.length} models</span></div>` +
+    rd.outputs.map(o=>`<div style="font-size:.7rem;color:#64748b;padding:2px 0;">• ${o}</div>`).join('');
+  mgEl.appendChild(col);
+});
+(function(){
+  const real = Array.from({length:60}, () => 60 + Math.random()*39);
+  const pred = real.map(r => r + (Math.random()-.5)*6);
+  Plotly.newPlot('predVsReal', [
+    { x:[55,102], y:[55,102], mode:'lines', line:{color:'#334155',dash:'dash',width:1.5}, name:'Perfect fit', hoverinfo:'skip' },
+    { x:real, y:pred, mode:'markers',
+      marker:{color:'#a855f7',size:7,opacity:.7,line:{color:'#c084fc',width:.5}},
+      name:'PVC Purity — AI prediction',
+      text:real.map((r,i)=>`PVC Purity<br>Real measurement: ${r.toFixed(1)}%<br>AI prediction: ${pred[i].toFixed(1)}%`),
+      hovertemplate:'%{text}<extra></extra>' },
+  ], {
+    ...DARK,
+    xaxis:{...DARK.xaxis,title:'Real measurement — PVC Purity (%)'},
+    yaxis:{...DARK.yaxis,title:'AI prediction — PVC Purity (%)'},
+    showlegend:true,
+    legend:{orientation:'h',y:1.12,x:.5,xanchor:'center',font:{size:11}},
+    annotations:[
+      {x:.97,y:.06,xref:'paper',yref:'paper',text:'R² ≈ 0.97',
+       showarrow:false,font:{size:14,color:'#a855f7'},bgcolor:'#1e293b',borderpad:6},
+      {x:.03,y:.97,xref:'paper',yref:'paper',text:'Parameter: PVC Purity (%)',
+       showarrow:false,font:{size:11,color:'#94a3b8'},bgcolor:'#1e293b',borderpad:5},
+    ],
+  }, CFG);
+})();
+
+/* ═══════════ STEP 3 — route bar ════════════════════════════════ */
+(function(){
+  const routes = ['T3.1 Mechanical','T3.2 Solvent','T3.3 Extraction'];
+
+  // Each metric gets its own colour + hatch pattern so metrics are always
+  // distinguishable regardless of which route you look at.
+  // Routes are separated by position on the x-axis (grouped bars).
+  // Each metric carries its full marker spec.
+  // PVC Purity: transparent fill + coloured border + backslash hatch (no solid fill)
+  // Others: solid fill + their own hatch pattern
+  const metrics = [
+    { name:'PVC Purity (%)',       vals:[74, 93, 66],
+      marker:{ color:'#a855f7', opacity:.85,
+               pattern:{ shape:'\\', size:7, solidity:0.65, fgcolor:'#ffffff40' },
+               line:{ color:'#a855f7', width:1 } } },
+    { name:'Mass Yield (%)',       vals:[82, 79, 75],
+      marker:{ color:'#22d3ee', opacity:.85,
+               pattern:{ shape:'/', size:6, solidity:0.55, fgcolor:'#ffffff40' },
+               line:{ color:'#22d3ee', width:1 } } },
+    { name:'Energy (kWh/t ÷ 5)',   vals:[28, 70, 55],
+      marker:{ color:'#f87171', opacity:.85,
+               pattern:{ shape:'x', size:6, solidity:0.55, fgcolor:'#ffffff40' },
+               line:{ color:'#f87171', width:1 } } },
+    { name:'Net Margin (€/t ÷ 5)', vals:[36, 58, 72],
+      marker:{ color:'#fbbf24', opacity:.85,
+               pattern:{ shape:'.', size:6, solidity:0.55, fgcolor:'#ffffff40' },
+               line:{ color:'#fbbf24', width:1 } } },
+  ];
+
+  Plotly.newPlot('routeBar',
+    metrics.map(m => ({
+      type:'bar', name:m.name, x:routes, y:m.vals,
+      marker: m.marker,
+      hovertemplate:'%{x}<br>'+m.name+': <b>%{y}</b><extra></extra>',
+    })),
+    { ...DARK, barmode:'group',
+      xaxis:{ ...DARK.xaxis, tickfont:{ size:12 } },
+      yaxis:{ ...DARK.yaxis, title:'Score / scaled value' },
+      legend:{ orientation:'h', y:1.14, x:.5, xanchor:'center', font:{ size:11 } },
+      bargap:0.25, bargroupgap:0.08 },
+    CFG
+  );
+})();
+
+/* ═══════════ STEP 4 — GA animation ════════════════════════════ */
+(function(){
+  let gaInterval=null, currentGen=0;
+  const MAX_GEN=12, N=80;
+  function makeGen(step) {
+    const progress=step/MAX_GEN, noise=1-progress*.7, bias=progress*.5;
+    const xs=[],ys=[],cols=[];
+    for(let i=0;i<N;i++){
+      const x=Math.min(1,Math.max(0,bias+(Math.random()-.4)*noise+.2));
+      const y=Math.min(1,Math.max(0,bias+(Math.random()-.4)*noise+.2));
+      xs.push(parseFloat((x*40+60).toFixed(1)));
+      ys.push(parseFloat((y*200+80).toFixed(0)));
+      cols.push(`hsl(${Math.round((x+y)/2*60+260)},80%,60%)`);
+    }
+    return {xs,ys,cols};
+  }
+  function renderGA(step){
+    const {xs,ys,cols}=makeGen(step);
+    const genReal=Math.round(step*200/MAX_GEN)+1;
+    document.getElementById('gaGenLabel').textContent=`Generation: ${genReal} / 200`;
+    Plotly.react('gaChart',[{
+      x:xs,y:ys,mode:'markers',
+      marker:{color:cols,size:7,opacity:.8,line:{color:'#ffffff20',width:.5}},
+      text:xs.map((x,i)=>`PVC Purity: ${x}%<br>Net Margin: €${ys[i]}/t`),
+      hovertemplate:'%{text}<extra></extra>', name:'Population',
+    }], {
+      ...DARK,
+      xaxis:{...DARK.xaxis,title:'PVC Purity (%)',range:[55,105]},
+      yaxis:{...DARK.yaxis,title:'Net Margin (€/t)',range:[60,300]},
+      showlegend:false,
+      annotations:[{x:.98,y:.97,xref:'paper',yref:'paper',
+        text:step===0?'🎲 Random initial guesses':step===MAX_GEN?'🌟 Evolved — solutions cluster near Pareto front!':'🧬 Evolving…',
+        showarrow:false,font:{size:13,color:'#94a3b8'},bgcolor:'#1e293b',borderpad:6}],
+    }, CFG);
+  }
+  renderGA(0);
+  document.getElementById('gaPlay').addEventListener('click',()=>{
+    if(gaInterval) return;
+    if(currentGen>=MAX_GEN) currentGen=0;
+    gaInterval=setInterval(()=>{
+      currentGen++; renderGA(currentGen);
+      if(currentGen>=MAX_GEN){clearInterval(gaInterval);gaInterval=null;}
+    },300);
+  });
+  document.getElementById('gaReset').addEventListener('click',()=>{
+    clearInterval(gaInterval);gaInterval=null;currentGen=0;renderGA(0);
+  });
+})();
+
+/* ═══════════ STEP 5 — HV canvas animation (step-by-step) ══════ */
+(function(){
+  const canvas = document.getElementById('hvCanvas');
+  const ctx    = canvas.getContext('2d');
+  const PAD=40, W=canvas.width-PAD*2, H=canvas.height-PAD*2;
+  const px = x => PAD + x*W;
+  const py = y => PAD + (1-y)*H;
+
+  // Pareto fronts — sorted by x ascending (so y descending: true Pareto)
+  const FRONTS = [
+    { label:'Route 1 (Mechanical)',  color:'#3b82f6', fill:'#3b82f640',
+      pts:[[0.55,0.90],[0.62,0.85],[0.70,0.78],[0.78,0.68],[0.86,0.55],[0.93,0.40]] },
+    { label:'Route 2 (Solvent)',     color:'#f59e0b', fill:'#f59e0b40',
+      pts:[[0.65,0.95],[0.73,0.91],[0.82,0.84],[0.90,0.74],[0.95,0.60]] },
+    { label:'Route 3 (Extraction)',  color:'#22c55e', fill:'#22c55e40',
+      pts:[[0.50,0.88],[0.60,0.82],[0.70,0.74],[0.80,0.63],[0.88,0.50]] },
+  ];
+
+  // Compute 2D hypervolume contributions (staircase, ref=(0,0))
+  function calcHV(pts) {
+    const sorted = [...pts].sort((a,b)=>a[0]-b[0]); // x ascending → y descending
+    let prev_x=0, hv=0;
+    const contribs = sorted.map(([x,y])=>{
+      const c = (x - prev_x) * y;
+      hv += c; prev_x = x;
+      return {x,y,contrib:c,cumHV:hv};
+    });
+    return contribs; // [{x,y,contrib,cumHV}, ...]
+  }
+
+  const HV_DATA = FRONTS.map(f => ({ ...f, contribs: calcHV(f.pts) }));
+
+  // Build flat animation steps
+  // Each step: { type:'rect', frontIdx, pointIdx } or { type:'summary', frontIdx }
+  const STEPS = [];
+  STEPS.push({ type:'init' });
+  HV_DATA.forEach((f,fi) => {
+    f.contribs.forEach((_,pi) => STEPS.push({ type:'rect', fi, pi }));
+    STEPS.push({ type:'summary', fi });
+  });
+  STEPS.push({ type:'final' });
+
+  let currentStep = 0;
+
+  function drawAxes() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Axis lines
+    ctx.strokeStyle='#334155'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(PAD,PAD); ctx.lineTo(PAD,PAD+H); ctx.lineTo(PAD+W,PAD+H); ctx.stroke();
+    // Tick labels
+    ctx.fillStyle='#475569'; ctx.font='10px Segoe UI';
+    ctx.fillText('0',PAD-6,PAD+H+3);
+    ctx.fillText('1',PAD+W-4,PAD+H+12);
+    ctx.fillText('1',PAD-12,PAD+4);
+    // Axis titles
+    ctx.font='11px Segoe UI';
+    ctx.fillText('PVC Purity (normalised →)',PAD+W/2-60,PAD+H+28);
+    ctx.save(); ctx.translate(14,PAD+H/2+40); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Net Margin (normalised →)',0,0); ctx.restore();
+    // Ref point marker
+    ctx.fillStyle='#ef444480'; ctx.beginPath(); ctx.arc(PAD,PAD+H,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#ef4444'; ctx.font='9px Segoe UI';
+    ctx.fillText('ref (0,0)',PAD+4,PAD+H+11);
+  }
+
+  function drawFrontPoints(f, opacity=1) {
+    // Points
+    f.pts.forEach(([x,y]) => {
+      ctx.beginPath(); ctx.arc(px(x),py(y),5,0,Math.PI*2);
+      ctx.fillStyle = f.color + Math.round(opacity*255).toString(16).padStart(2,'0');
+      ctx.fill();
+      ctx.strokeStyle='#0f172a'; ctx.lineWidth=1.2; ctx.stroke();
+    });
+    // Dashed Pareto line
+    const sorted=[...f.pts].sort((a,b)=>a[0]-b[0]);
+    ctx.beginPath(); ctx.setLineDash([4,3]);
+    ctx.strokeStyle=f.color+(opacity<1?'60':'99');
+    ctx.lineWidth=1.5;
+    sorted.forEach(([x,y],i) => i===0?ctx.moveTo(px(x),py(y)):ctx.lineTo(px(x),py(y)));
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  function drawRects(fi, upToPi) {
+    const f = HV_DATA[fi];
+    const sorted=[...f.pts].sort((a,b)=>a[0]-b[0]);
+    let prev_x=0;
+    for(let pi=0; pi<=upToPi && pi<sorted.length; pi++){
+      const [x,y]=sorted[pi];
+      // Draw rectangle from (prev_x,0) to (x,y)
+      const rx=px(prev_x), ry=py(y), rw=px(x)-px(prev_x), rh=py(0)-py(y);
+      ctx.fillStyle=f.fill;
+      ctx.fillRect(rx,ry,rw,rh);
+      // Contribution label inside rectangle
+      const contrib=f.contribs[pi].contrib;
+      if(rw>28 && rh>14){
+        ctx.fillStyle='#ffffffcc'; ctx.font='bold 9px Segoe UI';
+        ctx.textAlign='center';
+        ctx.fillText('+'+contrib.toFixed(3), rx+rw/2, ry+rh/2+3);
+        ctx.textAlign='left';
+      }
+      // Staircase border
+      ctx.strokeStyle=f.color; ctx.lineWidth=1;
+      ctx.strokeRect(rx,ry,rw,rh);
+      prev_x=x;
+    }
+  }
+
+  function drawHVLabel(fi, hv, isFinal) {
+    const f=HV_DATA[fi];
+    const y_pos = PAD + 22 + fi*18;
+    ctx.font = isFinal ? 'bold 12px Segoe UI' : '11px Segoe UI';
+    ctx.fillStyle = f.color;
+    ctx.fillText(`HV(${['R1','R2','R3'][fi]}) = ${hv.toFixed(3)}`, PAD+W-90, y_pos);
+  }
+
+  function renderStep(step) {
+    const s = STEPS[step];
+    drawAxes();
+
+    if(s.type === 'init') {
+      // Just show all points faintly
+      HV_DATA.forEach(f => drawFrontPoints(f, 0.4));
+
+    } else if(s.type === 'rect') {
+      // All previous fronts complete
+      for(let fi=0; fi<s.fi; fi++){
+        drawRects(fi, HV_DATA[fi].contribs.length-1);
+        drawFrontPoints(HV_DATA[fi]);
+        drawHVLabel(fi, HV_DATA[fi].contribs.at(-1).cumHV, false);
+      }
+      // Current front up to this point
+      drawRects(s.fi, s.pi);
+      drawFrontPoints(HV_DATA[s.fi]);
+      // Remaining fronts faint
+      for(let fi=s.fi+1; fi<HV_DATA.length; fi++) drawFrontPoints(HV_DATA[fi],0.3);
+      // Running HV label
+      const cumHV = HV_DATA[s.fi].contribs[s.pi].cumHV;
+      drawHVLabel(s.fi, cumHV, false);
+      // Highlight current rectangle outline
+      const sorted=[...HV_DATA[s.fi].pts].sort((a,b)=>a[0]-b[0]);
+      const prevX = s.pi>0 ? sorted[s.pi-1][0] : 0;
+      const [cx,cy]=sorted[s.pi];
+      ctx.strokeStyle='#ffffff'; ctx.lineWidth=2;
+      ctx.strokeRect(px(prevX),py(cy),px(cx)-px(prevX),py(0)-py(cy));
+
+    } else if(s.type === 'summary') {
+      for(let fi=0; fi<=s.fi; fi++){
+        drawRects(fi, HV_DATA[fi].contribs.length-1);
+        drawFrontPoints(HV_DATA[fi]);
+        drawHVLabel(fi, HV_DATA[fi].contribs.at(-1).cumHV, false);
+      }
+      for(let fi=s.fi+1; fi<HV_DATA.length; fi++) drawFrontPoints(HV_DATA[fi],0.3);
+
+    } else if(s.type === 'final') {
+      HV_DATA.forEach((f,fi)=>{
+        drawRects(fi,f.contribs.length-1);
+        drawFrontPoints(f);
+        const totalHV=f.contribs.at(-1).cumHV;
+        drawHVLabel(fi,totalHV,true);
+      });
+      // Crown on winner (Route 2)
+      const winner=1;
+      const wf=HV_DATA[winner];
+      const wPt=wf.pts[Math.floor(wf.pts.length/2)];
+      ctx.font='18px serif'; ctx.textAlign='center';
+      ctx.fillText('👑',px(wPt[0]),py(wPt[1])-10);
+      ctx.textAlign='left';
+    }
+  }
+
+  function updateStatusBar(step) {
+    const s = STEPS[step];
+    const statusEl = document.getElementById('hvStatus');
+    const progEl   = document.getElementById('hvProgress');
+    const barArea  = document.getElementById('hvBarArea');
+
+    if(s.type==='init') {
+      statusEl.innerHTML = '📍 <strong>Starting point:</strong> Three Pareto fronts, all shown faintly. Ready to compute hypervolume.';
+      progEl.textContent = `Step ${step} of ${STEPS.length-1}`;
+      barArea.innerHTML = '';
+
+    } else if(s.type==='rect') {
+      const c = HV_DATA[s.fi].contribs[s.pi];
+      const fname = FRONTS[s.fi].label;
+      statusEl.innerHTML =
+        `📦 <strong>${fname}</strong> — adding point ${s.pi+1}/${HV_DATA[s.fi].pts.length}: `+
+        `(${HV_DATA[s.fi].pts.sort((a,b)=>a[0]-b[0])[s.pi][0].toFixed(2)}, ${HV_DATA[s.fi].pts.sort((a,b)=>a[0]-b[0])[s.pi][1].toFixed(2)})<br>`+
+        `Rectangle contribution: <strong style="color:${FRONTS[s.fi].color}">+${c.contrib.toFixed(4)}</strong> &nbsp;|&nbsp; `+
+        `Running total: <strong style="color:${FRONTS[s.fi].color}">${c.cumHV.toFixed(4)}</strong>`;
+      progEl.textContent = `Step ${step} of ${STEPS.length-1}`;
+      barArea.innerHTML = '';
+
+    } else if(s.type==='summary') {
+      const hv = HV_DATA[s.fi].contribs.at(-1).cumHV;
+      statusEl.innerHTML =
+        `✅ <strong>${FRONTS[s.fi].label}</strong> complete — Total HV = `+
+        `<strong style="color:${FRONTS[s.fi].color}">${hv.toFixed(4)}</strong>`;
+      progEl.textContent = `Step ${step} of ${STEPS.length-1}`;
+      // Show bar chart for completed routes
+      let barsHTML = '';
+      const maxHV = Math.max(...HV_DATA.map(f=>f.contribs.at(-1).cumHV));
+      for(let fi=0; fi<=s.fi; fi++){
+        const fhv = HV_DATA[fi].contribs.at(-1).cumHV;
+        const pct = (fhv/maxHV*100).toFixed(1);
+        barsHTML += `
+          <div class="hv-bar-row">
+            <div class="hv-bar-label">${['R1','R2','R3'][fi]}</div>
+            <div class="hv-bar-track">
+              <div class="hv-bar-fill" style="width:${pct}%;background:${FRONTS[fi].color}cc;">${fhv.toFixed(3)}</div>
+            </div>
+            <div class="hv-bar-val">${fhv.toFixed(3)}</div>
+          </div>`;
+      }
+      barArea.innerHTML = barsHTML;
+
+    } else if(s.type==='final') {
+      const hvs = HV_DATA.map(f=>f.contribs.at(-1).cumHV);
+      const winnerIdx = hvs.indexOf(Math.max(...hvs));
+      statusEl.innerHTML =
+        `🏆 <strong>Winner: ${FRONTS[winnerIdx].label}</strong> — `+
+        `HV = <strong style="color:${FRONTS[winnerIdx].color}">${hvs[winnerIdx].toFixed(4)}</strong> `+
+        `(${((hvs[winnerIdx]/hvs[0]-1)*100).toFixed(0)}% more than Route 1)`;
+      progEl.textContent = `Step ${step} of ${STEPS.length-1} — complete`;
+      const maxHV=Math.max(...hvs);
+      barArea.innerHTML = HV_DATA.map((f,fi)=>`
+        <div class="hv-bar-row">
+          <div class="hv-bar-label">${['R1','R2','R3'][fi]}${fi===winnerIdx?' 👑':''}</div>
+          <div class="hv-bar-track">
+            <div class="hv-bar-fill" style="width:${(hvs[fi]/maxHV*100).toFixed(1)}%;background:${f.color}cc;">${hvs[fi].toFixed(3)}</div>
+          </div>
+          <div class="hv-bar-val">${hvs[fi].toFixed(3)}</div>
+        </div>`).join('');
+    }
+  }
+
+  function goto(step) {
+    currentStep = Math.max(0, Math.min(step, STEPS.length-1));
+    renderStep(currentStep);
+    updateStatusBar(currentStep);
+  }
+
+  goto(0);
+
+  let autoInterval=null;
+  document.getElementById('hvNext').addEventListener('click',()=>{ clearInterval(autoInterval);autoInterval=null; goto(currentStep+1); });
+  document.getElementById('hvPrev').addEventListener('click',()=>{ clearInterval(autoInterval);autoInterval=null; goto(currentStep-1); });
+  document.getElementById('hvResetBtn').addEventListener('click',()=>{ clearInterval(autoInterval);autoInterval=null; goto(0); });
+  document.getElementById('hvAuto').addEventListener('click',()=>{
+    if(autoInterval){ clearInterval(autoInterval); autoInterval=null; return; }
+    if(currentStep>=STEPS.length-1) goto(0);
+    autoInterval=setInterval(()=>{
+      currentStep++;
+      goto(currentStep);
+      if(currentStep>=STEPS.length-1){ clearInterval(autoInterval); autoInterval=null; }
+    }, 800);
+  });
+})();
+
+/* ═══════════ STEP 5 — Pareto scatter ══════════════════════════ */
+(function(){
+  // FIX: single star marker — use symbol:'star' only, text without ★ character
+  const rnd=(s)=>{let x=s;return()=>{x=Math.sin(x)*10000;return x-Math.floor(x);};};
+  const r1=rnd(42),r2=rnd(137),r3=rnd(999);
+  function front(n,xc,yc,rx,ry,nx,ny,rand){
+    const xs=[],ys=[];
+    for(let i=0;i<n;i++){
+      const t=i/(n-1);
+      xs.push(parseFloat((xc+rx*(t-.5)+(rand()-.5)*nx).toFixed(1)));
+      ys.push(parseFloat((yc-ry*(t-.5)*1.5+(rand()-.5)*ny).toFixed(0)));
+    }
+    return {xs,ys};
+  }
+  const f1=front(18,74, 230,28,90,4,15,r1);
+  const f2=front(15,90, 285,22,70,3,12,r2);
+  const f3=front(16,65, 310,20,80,4,14,r3);
+  const hover=(lbl,xs,ys)=>xs.map((_,i)=>`${lbl}<br>PVC Purity: ${xs[i]}%<br>Net Margin: €${ys[i]}/t`);
+  // Best point on f2 (highest purity)
+  const bestIdx2 = f2.xs.indexOf(Math.max(...f2.xs));
+
+  Plotly.newPlot('paretoChart',[
+    { x:f1.xs,y:f1.ys,mode:'markers',name:'T3.1 Mechanical',
+      marker:{color:'#3b82f6',size:9,opacity:.8,line:{color:'#93c5fd',width:1}},
+      text:hover('T3.1',f1.xs,f1.ys),hovertemplate:'%{text}<extra></extra>' },
+    { x:f2.xs,y:f2.ys,mode:'markers',name:'T3.2 Solvent',
+      marker:{color:'#f59e0b',size:9,opacity:.8,line:{color:'#fde68a',width:1}},
+      text:hover('T3.2',f2.xs,f2.ys),hovertemplate:'%{text}<extra></extra>' },
+    { x:f3.xs,y:f3.ys,mode:'markers',name:'T3.3 Extraction',
+      marker:{color:'#22c55e',size:9,opacity:.8,line:{color:'#86efac',width:1}},
+      text:hover('T3.3',f3.xs,f3.ys),hovertemplate:'%{text}<extra></extra>' },
+    // ★ Single star — NO ★ character in text (that caused the double-star bug)
+    { x:[f2.xs[bestIdx2]], y:[f2.ys[bestIdx2]],
+      mode:'markers+text',
+      marker:{symbol:'star',size:22,color:'#fcd34d',line:{color:'white',width:1.5}},
+      text:['Recommended'], textposition:'top center',
+      textfont:{color:'#fcd34d',size:12,family:'Segoe UI'},
+      name:'Optimal solution', hoverinfo:'skip' },
+  ], {
+    ...DARK,
+    xaxis:{...DARK.xaxis,title:'PVC Purity (%)',range:[50,108]},
+    yaxis:{...DARK.yaxis,title:'Net Margin (€/t)',range:[100,380]},
+    legend:{orientation:'h',y:1.12,x:.5,xanchor:'center',font:{size:11}},
+    annotations:[{x:.97,y:.97,xref:'paper',yref:'paper',
+      text:'Hover over any point for details',showarrow:false,font:{size:11,color:'#475569'}}],
+  }, CFG);
+})();
+
+/* ═══════════ STEP 6 — param radar ═════════════════════════════ */
+(function(){
+  const params  = ['Solvent conc.','Dissolution temp.','Dissolution time','Solid/liquid ratio','Precipitation temp.','Washing cycles'];
+  const optimal = [0.72, 0.68, 0.55, 0.45, 0.30, 0.80];
+  const lo      = [0.10, 0.20, 0.10, 0.05, 0.05, 0.20];
+  const hi      = [0.90, 0.90, 0.90, 0.90, 0.90, 1.00];
+
+  // Range data: [min, max, unit] for each parameter (Route 2 — Solvent/Texyloop)
+  const ranges = [
+    [10,  80,  '%vol', 'Volume fraction of selective PVC solvent. Higher → faster dissolution but more solvent cost.'],
+    [60,  160, '°C',   'Temperature of the dissolution vessel. Main driver of PVC purity — PVC dissolves rapidly above ~100 °C while PET stays solid.'],
+    [15,  240, 'min',  'Residence time in the dissolution vessel. Longer → more complete PVC dissolution; diminishing returns above ~120 min.'],
+    [20,  200, 'g/L',  'Mass of feedstock per litre of solvent. Higher ratio reduces cost but increases viscosity and decreases purity.'],
+    [0,   40,  '°C',   'Temperature to cool the PVC-laden solution and re-precipitate PVC. Lower temperature → finer, purer precipitate.'],
+    [1,   5,   'n',    'Number of wash + rinse cycles applied to the precipitated PVC cake. More cycles → higher purity.'],
+  ];
+
+  // Compute actual values from normalised optimal
+  const actualOptimal = optimal.map((v, i) => {
+    const [mn, mx] = ranges[i];
+    return mn + v * (mx - mn);
+  });
+
+  Plotly.newPlot('paramRadar',[
+    { type:'scatterpolar', fill:'toself', mode:'lines+markers',
+      r:[...lo,lo[0]], theta:[...params,params[0]],
+      name:'Low setting', fillcolor:'#1e293b80',
+      line:{color:'#475569',width:1,dash:'dot'}, marker:{color:'#475569',size:5},
+      hoverinfo:'skip' },
+    { type:'scatterpolar', fill:'toself', mode:'lines+markers',
+      r:[...hi,hi[0]], theta:[...params,params[0]],
+      name:'High setting', fillcolor:'#1e293b50',
+      line:{color:'#334155',width:1,dash:'dot'}, marker:{color:'#334155',size:5},
+      hoverinfo:'skip' },
+    { type:'scatterpolar', fill:'toself', mode:'lines+markers',
+      r:[...optimal,optimal[0]], theta:[...params,params[0]],
+      name:'Optimal (NSGA-II)', fillcolor:'#f59e0b25',
+      line:{color:'#f59e0b',width:2.5},
+      marker:{color:'#fcd34d',size:8,line:{color:'#f59e0b',width:1.5}},
+      // Remove trace name from hover — show only parameter + actual value
+      customdata: actualOptimal.concat([actualOptimal[0]]),
+      hovertemplate: '<b>%{theta}</b><br>Normalised: %{r:.2f}<br>Actual value: <b>%{customdata:.1f} ' +
+        '</b><extra></extra>' },
+  ],{
+    ...DARK,
+    polar:{bgcolor:'#0f172a',
+      radialaxis:{visible:true,range:[0,1],gridcolor:'#1e293b',tickfont:{color:'#475569'},tickvals:[0,.25,.5,.75,1]},
+      angularaxis:{gridcolor:'#1e293b',linecolor:'#334155',tickfont:{color:'#94a3b8',size:11}}},
+    legend:{orientation:'h',y:-.12,x:.5,xanchor:'center',font:{size:11}},
+    margin:{t:30,r:80,b:50,l:80},
+  }, CFG);
+
+  // ── Parameter info cards below the chart ──────────────────────────────
+  const grid = document.getElementById('paramInfoGrid');
+  params.forEach((p, i) => {
+    const [mn, mx, unit, desc] = ranges[i];
+    const actual = actualOptimal[i];
+    const pct    = ((optimal[i]) * 100).toFixed(0);
+    const card   = document.createElement('div');
+    card.style.cssText = 'background:#0f172a;border-radius:10px;padding:.9rem 1rem;border:1px solid #f59e0b40;display:flex;flex-direction:column;gap:.4rem;';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:.82rem;font-weight:700;color:#fcd34d;">${p}</span>
+        <button class="info-btn" data-tip="${desc.replace(/"/g,"'")}">?</button>
+      </div>
+      <div style="font-size:.75rem;color:#64748b;">Range: ${mn} – ${mx} ${unit}</div>
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <div style="flex:1;background:#1e293b;border-radius:999px;height:8px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#f59e0b,#fcd34d);border-radius:999px;"></div>
+        </div>
+        <span style="font-size:.82rem;font-weight:700;color:#f59e0b;min-width:70px;text-align:right;">
+          ${actual.toFixed(unit==='n'?0:1)} ${unit}
+        </span>
+      </div>`;
+    grid.appendChild(card);
+  });
+})();
+
+/* ═══════════ Route detail modal ════════════════════════════════ */
+function showRouteDetail(n){
+  const D={
+    1:{title:'🔨 T3.1 — Mechanical Recycling',color:'#3b82f6',
+       body:'<b>How it works:</b> The tarpaulin is shredded, milled, then separated using electrostatic or density-based sorters — PVC and PET have slightly different physical properties that allow separation without chemicals.<br><br><b>6 tunable parameters:</b> shredder speed (rpm), mill gap (mm), sieve mesh (mm), number of separation passes, ambient temperature (°C), throughput rate (kg/h).<br><br><b>Best for:</b> Highly contaminated material, tight energy budget, or moderate purity requirements (60–85%).'},
+    2:{title:'🧪 T3.2 — Solvent / Texyloop Recycling',color:'#f59e0b',
+       body:'<b>How it works:</b> Shredded tarpaulin is dissolved in hot selective solvent (~120–160 °C). PVC dissolves; PET fibres remain solid and are filtered off. Cooling re-precipitates ultra-clean PVC powder. Solvent is recovered in a closed loop (>98% recycled).<br><br><b>6 tunable parameters:</b> solvent concentration (%vol), dissolution temperature (°C), dissolution time (min), solid-to-liquid ratio (g/L), precipitation temperature (°C), washing cycles.<br><br><b>Best for:</b> High PVC purity requirements (85–99.5%), low contamination feedstock, food/medical-grade applications.'},
+    3:{title:'💰 T3.3 — Selective Additive Extraction',color:'#22c55e',
+       body:'<b>How it works:</b> Shredded material is bathed in a liquid extractant at moderate temperature. Plasticisers (DINP) and heat stabilisers migrate from the PVC matrix into the liquid — PVC and PET remain solid throughout. The liquid is processed to recover purified additives.<br><br><b>6 tunable parameters:</b> extractant type (0/1/2), extractant concentration (%vol), extraction temperature (°C), contact time (min), pH level, agitation speed (rpm).<br><br><b>Best for:</b> High additive content (≥12 %wt), where recovered plasticiser (€800/t) and stabiliser (€1200/t) revenues dominate the economics.'},
+  };
+  const d=D[n];
+  const m=document.createElement('div');
+  m.style.cssText='position:fixed;inset:0;background:#000000bb;display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+  m.innerHTML=`
+    <div style="background:#1e293b;border-radius:16px;padding:2rem;max-width:520px;width:100%;border:2px solid ${d.color}60;position:relative;">
+      <h3 style="color:${d.color};margin-bottom:1rem;">${d.title}</h3>
+      <p style="color:#cbd5e1;font-size:.95rem;line-height:1.8;">${d.body}</p>
+      <button onclick="this.closest('[style*=position]').remove()"
+        style="margin-top:1.5rem;background:${d.color};color:#fff;border:none;padding:.5rem 1.5rem;border-radius:8px;cursor:pointer;font-weight:600;">
+        Close
+      </button>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<h2>Design — Sezione 1: Architettura generale</h2>
+<p class="subtitle">Struttura del pacchetto <code>retain_dss</code> e flusso dei dati</p>
+
+<div class="mockup">
+  <div class="mockup-header">retain_dss/ — struttura a livelli</div>
+  <div class="mockup-body" style="font-family:monospace;font-size:0.85em;line-height:1.8;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+      <div>
+        <div style="color:#94a3b8;margin-bottom:0.5rem;">LAYER 1 — Dati</div>
+        <div style="background:#1e293b;padding:0.75rem;border-radius:6px;border-left:3px solid #6366f1;">
+          <div style="color:#a5b4fc;">data/</div>
+          <div style="padding-left:1rem;color:#cbd5e1;">
+            generator.py &nbsp;<span style="color:#64748b;">← genera DB sintetico</span><br>
+            schema.py &nbsp;&nbsp;&nbsp;<span style="color:#64748b;">← definisce variabili</span><br>
+            loader.py &nbsp;&nbsp;&nbsp;<span style="color:#64748b;">← carica/salva CSV</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="color:#94a3b8;margin-bottom:0.5rem;">LAYER 2 — Modelli ML</div>
+        <div style="background:#1e293b;padding:0.75rem;border-radius:6px;border-left:3px solid #22d3ee;">
+          <div style="color:#67e8f9;">models/</div>
+          <div style="padding-left:1rem;color:#cbd5e1;">
+            trainer.py &nbsp;&nbsp;<span style="color:#64748b;">← addestra surrogate model</span><br>
+            predictor.py <span style="color:#64748b;">← inferenza rapida</span><br>
+            evaluator.py <span style="color:#64748b;">← metriche R², RMSE</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="color:#94a3b8;margin-bottom:0.5rem;">LAYER 3 — Ottimizzatore</div>
+        <div style="background:#1e293b;padding:0.75rem;border-radius:6px;border-left:3px solid #f59e0b;">
+          <div style="color:#fcd34d;">optimizer/</div>
+          <div style="padding-left:1rem;color:#cbd5e1;">
+            genetic.py &nbsp;&nbsp;<span style="color:#64748b;">← algoritmo genetico (NSGA-II)</span><br>
+            objectives.py <span style="color:#64748b;">← funzioni obiettivo</span><br>
+            route_selector.py <span style="color:#64748b;">← confronta 3 rotte</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="color:#94a3b8;margin-bottom:0.5rem;">LAYER 4 — Interfacce</div>
+        <div style="background:#1e293b;padding:0.75rem;border-radius:6px;border-left:3px solid #4ade80;">
+          <div style="color:#86efac;">ui/</div>
+          <div style="padding-left:1rem;color:#cbd5e1;">
+            app.py &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#64748b;">← Streamlit (operatori)</span><br>
+            notebooks/ &nbsp;<span style="color:#64748b;">← Jupyter (ricercatori)</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:1.5rem;padding:0.75rem;background:#0f172a;border-radius:6px;color:#94a3b8;font-size:0.8em;">
+      <span style="color:#6366f1;">INPUT</span>: proprietà telo in ingresso (PVC%, PET%, contaminanti, granulometria…)
+      &nbsp;→&nbsp;
+      <span style="color:#f59e0b;">GA ottimizza</span> i 3 processi in parallelo usando il surrogate model
+      &nbsp;→&nbsp;
+      <span style="color:#4ade80;">OUTPUT</span>: rotta migliore + parametri di processo ottimizzati + Pareto front
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:1.5rem;">
+  <h3>Note di design</h3>
+  <ul>
+    <li>Il database sintetico è un CSV (o SQLite) generato una sola volta e riusato da tutti i layer</li>
+    <li>I surrogate model (es. Random Forest o Gradient Boosting) sostituiscono le equazioni di processo durante l'ottimizzazione GA — molto più veloci da valutare</li>
+    <li>NSGA-II gestisce i 4 obiettivi (purezza PVC, resa, qualità, efficienza) restituendo un Pareto front</li>
+    <li>La UI Streamlit mostra slider per le proprietà di input e visualizza il Pareto front + la soluzione raccomandata</li>
+  </ul>
+</div>

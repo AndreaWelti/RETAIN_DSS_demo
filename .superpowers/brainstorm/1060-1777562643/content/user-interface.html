@@ -1,0 +1,33 @@
+<h2>Chi usa il tool e come?</h2>
+<p class="subtitle">Il profilo utente determina il formato dell'interfaccia</p>
+
+<div class="options">
+  <div class="option" data-choice="researcher-jupyter" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Ricercatori / Data scientists</h3>
+      <p>Usano Jupyter Notebook o script Python. Vogliono controllare il codice, esplorare i risultati, modificare parametri. Interfaccia: notebook o CLI.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="engineer-webapp" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Ingegneri di processo / operatori</h3>
+      <p>Non vogliono vedere codice. Inseriscono le proprietà del materiale in ingresso e ricevono i parametri ottimali. Interfaccia: web app o form interattivo.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="mixed" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Entrambi (uso misto)</h3>
+      <p>Un backend Python riutilizzabile (libreria/API) con un frontend semplice per gli operatori e notebook per i ricercatori.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="demo-only" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Demo / Proof-of-concept</h3>
+      <p>Questa simulazione è solo per dimostrare il concept al team o ai partner. Bastano notebook ben strutturati con grafici chiari.</p>
+    </div>
+  </div>
+</div>

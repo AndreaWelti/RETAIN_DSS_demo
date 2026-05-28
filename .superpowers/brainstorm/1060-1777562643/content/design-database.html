@@ -1,0 +1,112 @@
+<h2>Design — Sezione 2: Schema del database sintetico</h2>
+<p class="subtitle">Variabili per le 3 rotte di riciclo. Un record = un esperimento/campagna di processo.</p>
+
+<div style="display:grid;grid-template-columns:1fr;gap:1rem;">
+
+  <!-- COMMON INPUT -->
+  <div style="background:#1e293b;border-radius:8px;border-left:4px solid #6366f1;padding:1rem;">
+    <div style="color:#a5b4fc;font-weight:600;margin-bottom:0.5rem;">MATERIALE IN INGRESSO (comune alle 3 rotte)</div>
+    <table style="width:100%;font-size:0.82em;color:#cbd5e1;border-collapse:collapse;">
+      <tr style="color:#94a3b8;border-bottom:1px solid #334155;"><th style="text-align:left;padding:4px 8px;">Variabile</th><th style="text-align:left;padding:4px 8px;">Unità</th><th style="text-align:left;padding:4px 8px;">Range tipico</th><th style="text-align:left;padding:4px 8px;">Descrizione</th></tr>
+      <tr><td style="padding:4px 8px;">pvc_content</td><td>%wt</td><td>40–70</td><td>% PVC nel telo</td></tr>
+      <tr style="background:#0f172a;"><td style="padding:4px 8px;">pet_content</td><td>%wt</td><td>20–45</td><td>% PET (fibra base)</td></tr>
+      <tr><td style="padding:4px 8px;">additive_content</td><td>%wt</td><td>5–20</td><td>Plastificanti, stabilizzanti, pigmenti</td></tr>
+      <tr style="background:#0f172a;"><td style="padding:4px 8px;">contamination_level</td><td>%wt</td><td>0–15</td><td>Sporco, vernice, adesivi</td></tr>
+      <tr><td style="padding:4px 8px;">particle_size_d50</td><td>mm</td><td>0.5–50</td><td>Granulometria mediana</td></tr>
+      <tr style="background:#0f172a;"><td style="padding:4px 8px;">moisture_content</td><td>%wt</td><td>0–8</td><td>Umidità</td></tr>
+      <tr><td style="padding:4px 8px;">material_age</td><td>anni</td><td>1–20</td><td>Età del telo (degrado)</td></tr>
+      <tr style="background:#0f172a;"><td style="padding:4px 8px;">tensile_strength_input</td><td>MPa</td><td>50–300</td><td>Resistenza a trazione iniziale</td></tr>
+    </table>
+  </div>
+
+  <!-- ROUTE 1 -->
+  <div style="background:#1e293b;border-radius:8px;border-left:4px solid #22d3ee;padding:1rem;">
+    <div style="color:#67e8f9;font-weight:600;margin-bottom:0.5rem;">ROTTA 1 — Meccanica (T3.1): Parametri di processo + Output</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+      <div>
+        <div style="color:#94a3b8;font-size:0.78em;margin-bottom:4px;">PARAMETRI</div>
+        <table style="width:100%;font-size:0.8em;color:#cbd5e1;border-collapse:collapse;">
+          <tr><td style="padding:3px 8px;">shredder_speed</td><td>rpm</td><td>200–1200</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">mill_gap</td><td>mm</td><td>0.1–5</td></tr>
+          <tr><td style="padding:3px 8px;">sieve_mesh_size</td><td>mm</td><td>0.5–10</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">separation_cycles</td><td>n</td><td>1–5</td></tr>
+          <tr><td style="padding:3px 8px;">process_temp</td><td>°C</td><td>20–80</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">throughput_rate</td><td>kg/h</td><td>10–500</td></tr>
+        </table>
+      </div>
+      <div>
+        <div style="color:#94a3b8;font-size:0.78em;margin-bottom:4px;">OUTPUT</div>
+        <table style="width:100%;font-size:0.8em;color:#cbd5e1;border-collapse:collapse;">
+          <tr><td style="padding:3px 8px;">pvc_purity</td><td>%</td><td>60–99</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">pet_purity</td><td>%</td><td>55–98</td></tr>
+          <tr><td style="padding:3px 8px;">mass_yield</td><td>%</td><td>40–90</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">energy_consumption</td><td>kWh/t</td><td>50–800</td></tr>
+          <tr><td style="padding:3px 8px;">particle_size_out_d50</td><td>mm</td><td>0.1–5</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTE 2 -->
+  <div style="background:#1e293b;border-radius:8px;border-left:4px solid #f59e0b;padding:1rem;">
+    <div style="color:#fcd34d;font-weight:600;margin-bottom:0.5rem;">ROTTA 2 — Solvente / Texyloop (T3.2): Parametri di processo + Output</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+      <div>
+        <div style="color:#94a3b8;font-size:0.78em;margin-bottom:4px;">PARAMETRI</div>
+        <table style="width:100%;font-size:0.8em;color:#cbd5e1;border-collapse:collapse;">
+          <tr><td style="padding:3px 8px;">solvent_concentration</td><td>%vol</td><td>10–80</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">dissolution_temp</td><td>°C</td><td>60–160</td></tr>
+          <tr><td style="padding:3px 8px;">dissolution_time</td><td>min</td><td>15–240</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">solid_liquid_ratio</td><td>g/L</td><td>20–200</td></tr>
+          <tr><td style="padding:3px 8px;">precipitation_temp</td><td>°C</td><td>0–40</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">washing_cycles</td><td>n</td><td>1–5</td></tr>
+        </table>
+      </div>
+      <div>
+        <div style="color:#94a3b8;font-size:0.78em;margin-bottom:4px;">OUTPUT</div>
+        <table style="width:100%;font-size:0.8em;color:#cbd5e1;border-collapse:collapse;">
+          <tr><td style="padding:3px 8px;">pvc_purity</td><td>%</td><td>85–99.5</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">pet_recovery</td><td>%</td><td>70–98</td></tr>
+          <tr><td style="padding:3px 8px;">mass_yield</td><td>%</td><td>55–95</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">solvent_recovery</td><td>%</td><td>60–95</td></tr>
+          <tr><td style="padding:3px 8px;">energy_consumption</td><td>kWh/t</td><td>200–1500</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">tensile_strength_out</td><td>MPa</td><td>30–250</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTE 3 -->
+  <div style="background:#1e293b;border-radius:8px;border-left:4px solid #4ade80;padding:1rem;">
+    <div style="color:#86efac;font-weight:600;margin-bottom:0.5rem;">ROTTA 3 — Estrazione selettiva additivi (T3.3): Parametri di processo + Output</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+      <div>
+        <div style="color:#94a3b8;font-size:0.78em;margin-bottom:4px;">PARAMETRI</div>
+        <table style="width:100%;font-size:0.8em;color:#cbd5e1;border-collapse:collapse;">
+          <tr><td style="padding:3px 8px;">extractant_type</td><td>cat.</td><td>3 tipi</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">extractant_conc</td><td>%vol</td><td>5–50</td></tr>
+          <tr><td style="padding:3px 8px;">extraction_temp</td><td>°C</td><td>40–120</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">extraction_time</td><td>min</td><td>10–180</td></tr>
+          <tr><td style="padding:3px 8px;">ph_level</td><td>—</td><td>2–12</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">agitation_speed</td><td>rpm</td><td>100–800</td></tr>
+        </table>
+      </div>
+      <div>
+        <div style="color:#94a3b8;font-size:0.78em;margin-bottom:4px;">OUTPUT</div>
+        <table style="width:100%;font-size:0.8em;color:#cbd5e1;border-collapse:collapse;">
+          <tr><td style="padding:3px 8px;">plasticizer_recovery</td><td>%</td><td>30–95</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">stabilizer_recovery</td><td>%</td><td>20–90</td></tr>
+          <tr><td style="padding:3px 8px;">pvc_residual_purity</td><td>%</td><td>70–98</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">mass_yield</td><td>%</td><td>50–92</td></tr>
+          <tr><td style="padding:3px 8px;">energy_consumption</td><td>kWh/t</td><td>100–900</td></tr>
+          <tr style="background:#0f172a;"><td style="padding:3px 8px;">additive_purity</td><td>%</td><td>50–99</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1rem;padding:0.75rem;background:#1e293b;border-radius:6px;color:#94a3b8;font-size:0.8em;">
+  <strong style="color:#cbd5e1;">Generazione sintetica:</strong> correlazioni non-lineari con rumore gaussiano. Es: purezza PVC aumenta con temperature/cicli ma cala con contaminazione e umidità alta. ~500 record per rotta.
+</div>
