@@ -1,6 +1,12 @@
 # retain_dss/ui/app.py
+import sys
 import json
 from pathlib import Path
+
+# Make retain_dss importable from source tree (required on Streamlit Cloud)
+_repo_root = Path(__file__).resolve().parent.parent.parent
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
