@@ -2,7 +2,7 @@
 from pathlib import Path
 import pandas as pd
 
-DATA_DIR = Path(__file__).parent.parent.parent / "data" / "synthetic"
+DATA_DIR = Path(__file__).parent / "synthetic"
 
 
 def save_route(df: pd.DataFrame, route_name: str, data_dir: Path = DATA_DIR) -> Path:
